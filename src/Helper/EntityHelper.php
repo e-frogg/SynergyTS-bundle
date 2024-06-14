@@ -6,6 +6,7 @@ namespace Efrogg\Synergy\Helper;
 
 
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
+use Symfony\Component\Serializer\Attribute\Ignore;
 
 class EntityHelper
 {
@@ -15,6 +16,12 @@ class EntityHelper
      */
     private array $entityClasses = [];
 
+    /**
+     * @var array<class-string<array<string,mixed>>>
+     */
+    #[Ignore]
+    #[\Symfony\Component\Serializer\Annotation\Ignore]
+    private array $_entityDefinitions = [];
     /**
      * @var array<string, string>
      */
@@ -26,6 +33,25 @@ class EntityHelper
         return static::$entityNamesCache[$class];
     }
 
+    /**
+     * @param array $_entityDefinitions
+     *
+     * @return void
+     * @deprecated not uset for now... maybe later
+     */
+    public function setEntityDefinitions(array $_entityDefinitions): void
+    {
+        $this->_entityDefinitions = $_entityDefinitions;
+    }
+
+    /**
+     *
+     * @return array
+     */
+    public function getEntityDefinitions(): array
+    {
+        return $this->_entityDefinitions;
+    }
 
     /**
      * @param iterable<SynergyEntityInterface> $entities

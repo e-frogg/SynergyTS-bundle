@@ -23,7 +23,7 @@ services:
 
     Efrogg\Synergy\Helper\EntityHelper:
         calls:
-            - [setEntities, [!tagged_iterator Synergy.entity]]
+            - [setEntities, [!tagged_iterator synergy.entity]]
 
     Efrogg\Synergy\Acl\AclManager:
         calls:
