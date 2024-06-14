@@ -1,10 +1,10 @@
 parameters:
-    Synergy.grants.actions:
+    synergy.grants.actions:
         read: false
         create: false
         update: false
         delete: false
-    Synergy.grants.entity: {}
+    synergy.grants.entity: {}
 #        exampleEntity:
 #            read: true
 
@@ -27,5 +27,5 @@ services:
 
     Efrogg\Synergy\Acl\AclManager:
         calls:
-            - [ setDefaultActionGrants , [ '%Synergy.grants.actions%' ]]
-            - [ setDefaultEntityGrants , [ '%Synergy.grants.entity%']]
+            - [ setDefaultActionGrants , [ '%synergy.grants.actions%' ]]
+            - [ setDefaultEntityGrants , [ '%synergy.grants.entity%']]
