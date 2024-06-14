@@ -1,0 +1,24 @@
+{
+  "name": "efrogg/synergy-bundle",
+  "version": "0.0.1",
+  "description": "A simple API for JavaScript",
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
+  "autoload": {
+    "psr-4": {
+      "Efrogg\\Synergy\\": "src/"
+    },
+    "files": []
+  },
+  "require": {
+    "php": ">=8.0.0",
+    "symfony/mercure-bundle": "^0.3.8",
+    "symfony/ux-turbo": "^2.16",
+    "symfony/stimulus-bundle": "^2.0"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest"
+  }
+}

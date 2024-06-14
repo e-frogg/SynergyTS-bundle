@@ -1,0 +1,31 @@
+parameters:
+    Synergy.grants.actions:
+        read: false
+        create: false
+        update: false
+        delete: false
+    Synergy.grants.entity: {}
+#        exampleEntity:
+#            read: true
+
+services:
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+
+    Efrogg\Synergy\:
+        resource: '../src/'
+
+    Efrogg\Synergy\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    Efrogg\Synergy\Helper\EntityHelper:
+        calls:
+            - [setEntities, [!tagged_iterator Synergy.entity]]
+
+    Efrogg\Synergy\Acl\AclManager:
+        calls:
+            - [ setDefaultActionGrants , [ '%Synergy.grants.actions%' ]]
+            - [ setDefaultEntityGrants , [ '%Synergy.grants.entity%']]
