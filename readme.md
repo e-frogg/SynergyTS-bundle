@@ -51,6 +51,28 @@ class MyEntity implements SynergyEntityInterface
 {
     // [...]
 ```
+### Grants
+By default, all entities are locked. You must add a grant to the entity to allow access to the entity.
+
+file `services.yaml` : 
+
+Todo : passer dans la config yaml
+```yaml
+parameters:
+    synergy.grants.actions:
+        read: false
+        create: false
+        update: false
+        delete: false
+    synergy.grants.entity:
+        MyEntity:
+            read: true
+```
+
+Or you can manage grants using an eventListener. The event triggered are : 
+* `AclEntityGrantEvent` to define entity level grants
+* `AclClassGrantEvent` to define class level grants
+
 
 ## FrontEnd
 ```json

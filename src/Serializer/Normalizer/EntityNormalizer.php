@@ -48,11 +48,13 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
         'createdAt',
         'updatedAt',
         '_properties',
+        '_entityName',
     ];
 
     /** @var array<string> */
     protected const array SKIPPED_ATTRIBUTE_PREFIX = [
         '__',
+        '_',
         'lazyObject',
         'lazyProperties',
     ];
