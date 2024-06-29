@@ -15,7 +15,7 @@ use Symfony\Component\DependencyInjection\Loader as DependencyInjectionLoader;
 class SynergyExtension extends Extension
 {
 
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
         // load the configuration to inject the services
         $configuration = new Configuration();
