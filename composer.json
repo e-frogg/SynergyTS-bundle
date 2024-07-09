@@ -20,5 +20,8 @@
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest"
+  },
+  "suggest": {
+    "efrogg/synergy-maker-bundle": "allow to generate entities and form for vuetify"
   }
 }
