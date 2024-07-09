@@ -84,7 +84,7 @@ class Criteria
     }
 
     /**
-     * @return string[]|null
+     * @return array<string,string>|null
      */
     public function getOrderBy(): ?array
     {
