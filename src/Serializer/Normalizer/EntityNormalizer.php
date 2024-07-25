@@ -219,7 +219,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
         return false;
     }
 
-    public static function isRelationCollection(Type $type)
+    public static function isRelationCollection(Type $type): bool
     {
         return
             $type->isCollection()
