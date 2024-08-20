@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Efrogg\Synergy\Data;
 
+use App\Model\ProjectModel;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Efrogg\Synergy\Serializer\Normalizer\EntityCollectionNormalizer;
 use Efrogg\Synergy\Serializer\Normalizer\EntityNormalizer;
@@ -50,5 +51,35 @@ class EntityResponseBuilder
             $data['mainIds'] = $mainIds;
         }
         return new JsonResponse($data);
+    }
+
+    /**
+     * @param array<SynergyEntityInterface> $entities
+     * @param string|array<string>|null     $mercureTopics
+     *
+     * @return JsonResponse
+     * @throws ExceptionInterface
+     */
+    public function buildResponseFromCollection(array $entities, null|string|array $mercureTopics = null): JsonResponse
+    {
+        return $this->buildResponse(
+            $entities,
+            $this->computeMainIds($entities),
+            $mercureTopics
+        );
+    }
+
+    /**
+     * @param array<SynergyEntityInterface> $entities
+     *
+     * @return array
+     */
+    private function computeMainIds(array $entities)
+    {
+        $mainIds = [];
+        foreach ($entities as $entity) {
+            $mainIds[$entity::getEntityName()] []= $entity->getId();
+        }
+        return $mainIds;
     }
 }
