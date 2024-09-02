@@ -52,10 +52,16 @@ class Criteria
         return $this->associations;
     }
 
-    public function addAssociation(string $propertyName, ?Criteria $criteria = null): static
+    public function addAssociation(string $propertyPath, ?Criteria $criteria = null): static
     {
         $criteria ??= new Criteria();
+        $path = explode('.', $propertyPath);
+        $propertyName = array_shift($path);
         $this->associations[$propertyName] = $criteria;
+        while ($propertyName = array_shift($path)) {
+            $criteria = $criteria->getAssociation($propertyName);
+        }
+
         return $this;
     }
 
