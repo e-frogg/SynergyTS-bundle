@@ -20,7 +20,7 @@ class EntityUpdater
     private bool $enabled = true;
 
     public function __construct(
-        private HubInterface $hub,
+        private readonly HubInterface $hub,
         private readonly EntityCollectionNormalizer $entityCollectionNormalizer,
         private readonly EventDispatcherInterface $eventDispatcher,
     ) {
