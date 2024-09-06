@@ -2,7 +2,9 @@
 
 namespace Efrogg\Synergy\Mercure;
 
-class MercureActionCollection
+use Countable;
+
+class MercureActionCollection implements Countable
 {
     /**
      * @param array<EntityAction> $actions
@@ -12,8 +14,21 @@ class MercureActionCollection
     ) {
     }
 
-    public function addAction(EntityAction $action): self
+    public function count(): int
     {
+        return count($this->actions);
+    }
+
+    public function addAction(EntityAction $action, bool $deduplicate = true): self
+    {
+        if ($deduplicate) {
+            foreach ($this->actions as $existingAction) {
+                if ($existingAction->isSame($action)) {
+                    $existingAction->merge($action);
+                    return $this;
+                }
+            }
+        }
         $this->actions[] = $action;
         return $this;
     }

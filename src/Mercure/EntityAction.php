@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Efrogg\Synergy\Mercure;
 
+use Countable;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 
-abstract class EntityAction
+abstract class EntityAction implements Countable
 {
     protected static string $action;
     /** @var array<string,mixed> */
@@ -33,6 +34,11 @@ abstract class EntityAction
         return $this->entities;
     }
 
+    public function count(): int
+    {
+        return count($this->entities);
+    }
+
     /**
      * @param array<SynergyEntityInterface> $entities
      *
@@ -50,5 +56,20 @@ abstract class EntityAction
     public static function getAdditionalParameters(): array
     {
         return static::$additionalParameters;
+    }
+
+    public function isSame(EntityAction $action): bool
+    {
+        return $action::getAction() === static::getAction();
+    }
+
+    public function merge(EntityAction $action): void
+    {
+        foreach ($action->getEntities() as $newEntity) {
+            if(in_array($newEntity, $this->entities, true)) {
+                continue;
+            }
+            $this->entities[] = $newEntity;
+        }
     }
 }

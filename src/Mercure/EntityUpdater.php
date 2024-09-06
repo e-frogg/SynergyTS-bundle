@@ -7,11 +7,9 @@ namespace Efrogg\Synergy\Mercure;
 use Efrogg\Synergy\Context;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Efrogg\Synergy\Event\MercureEntityActionEvent;
-use Efrogg\Synergy\Serializer\Normalizer\EntityCollectionNormalizer;
+use Efrogg\Synergy\Mercure\Collector\ActionCollectorInterface;
 use JsonException;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Mercure\HubInterface;
-use Symfony\Component\Mercure\Update;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
 class EntityUpdater
@@ -20,9 +18,8 @@ class EntityUpdater
     private bool $enabled = true;
 
     public function __construct(
-        private readonly HubInterface $hub,
-        private readonly EntityCollectionNormalizer $entityCollectionNormalizer,
         private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ActionCollectorInterface $actionCollector
     ) {
     }
 
@@ -86,55 +83,16 @@ class EntityUpdater
         }
 
         // split actions by topic
-        /** @var array<string,MercureActionCollection> $actionsByTopic */
-        $actionsByTopic = [];
         foreach ($actions->getActions() as $action) {
             $topicEvent = new MercureEntityActionEvent($action);
             $this->eventDispatcher->dispatch($topicEvent);
 
             foreach ($topicEvent->getTopicActions() as $topic => $entityAction) {
-                if (!isset($actionsByTopic[$topic])) {
-                    $actionsByTopic[$topic] = new MercureActionCollection();
-                }
-                $actionsByTopic[$topic]->addAction($entityAction);
+                $this->actionCollector->addTopicAction($topic, $action);
             }
         }
+//        $this->actionCollector->flush();
 
-        foreach ($actionsByTopic as $topic => $topicMercureActions) {
-            $actionsJson = json_encode(
-                array_map(
-                    $this->normalizeAction(...),
-                    $topicMercureActions->getActions(),
-                ),
-                JSON_THROW_ON_ERROR
-            );
-
-            $update = new Update(
-                $topic,
-                $actionsJson,
-                true // private = auth jwt
-            );
-
-            // Publisher's JWT must contain this topic, a URI template it matches or * in mercure.publish or you'll get a 401
-            // Subscriber's JWT must contain this topic, a URI template it matches or * in mercure.subscribe to receive the update
-            $this->hub->publish($update);
-        }
-    }
-
-    /**
-     * @param EntityAction $action
-     *
-     * @return array<string,mixed>
-     * @throws ExceptionInterface
-     */
-    public function normalizeAction(EntityAction $action): array
-    {
-        $data = $this->entityCollectionNormalizer->normalize($action->getEntities());
-        return [
-            'action' => $action::getAction(),
-            'data'   => $data,
-            ...$action::getAdditionalParameters()
-        ];
     }
 
     public function disable(): void
@@ -146,5 +104,4 @@ class EntityUpdater
     {
         $this->enabled = true;
     }
-
 }

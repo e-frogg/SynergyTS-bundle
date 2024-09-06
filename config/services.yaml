@@ -29,3 +29,6 @@ services:
         calls:
             - [ setDefaultActionGrants , [ '%synergy.grants.actions%' ]]
             - [ setDefaultEntityGrants , [ '%synergy.grants.entity%']]
+
+    Efrogg\Synergy\Mercure\Collector\ActionCollectorInterface:
+        class: Efrogg\Synergy\Mercure\Collector\ActionCollector
