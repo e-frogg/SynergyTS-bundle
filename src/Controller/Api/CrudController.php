@@ -6,11 +6,12 @@ namespace Efrogg\Synergy\Controller\Api;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Efrogg\Synergy\AutoSync\autoSyncService;
 use Efrogg\Synergy\Context;
 use Efrogg\Synergy\Controller\Trait\JsonRequestTrait;
 use Efrogg\Synergy\Data\CriteriaParser;
-use Efrogg\Synergy\Data\EntityResponseBuilder;
 use Efrogg\Synergy\Data\EntityRepositoryHelper;
+use Efrogg\Synergy\Data\EntityResponseBuilder;
 use Efrogg\Synergy\Entity\SynergyEnricher;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Efrogg\Synergy\Exception\SerializerException;
@@ -38,7 +39,8 @@ class CrudController extends AbstractController
         private readonly SynergyEnricher $SynergyEnricher,
         private readonly EntityRepositoryHelper $entityRepositoryHelper,
         private readonly CriteriaParser $criteriaParser,
-        private readonly EntityResponseBuilder $entityResponseBuilder
+        private readonly EntityResponseBuilder $entityResponseBuilder,
+        private readonly autoSyncService $autoSyncService
     ) {
     }
 
@@ -107,7 +109,10 @@ class CrudController extends AbstractController
         $criteria = $this->criteriaParser->parse($body);
 
         $result = $this->entityRepositoryHelper->search($entityClass, $criteria);
-
+        if($criteria->isAutoSync()) {
+            $autoSync = $this->autoSyncService->initAutoSync($entityClass, $criteria, $result);
+            $topics = $autoSync->getTopics();
+        }
         return $this->entityResponseBuilder->buildResponse($result->getEntities(), mainIds: $result->getMainIds());
 
     }

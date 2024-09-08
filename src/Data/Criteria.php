@@ -23,6 +23,7 @@ class Criteria
         private ?array $orderBy = null,
         private ?int $limit = null,
         private ?int $offset = null,
+        private bool $autoSync = false,
         private array $associations = [],
         private ?QueryBuilder $queryBuilder = null
     ) {
@@ -126,6 +127,20 @@ class Criteria
     {
         $this->offset = $offset;
         return $this;
+    }
+
+    public function setAutoSync(bool $autoSync): static
+    {
+        $this->autoSync = $autoSync;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAutoSync(): bool
+    {
+        return $this->autoSync;
     }
 
 
