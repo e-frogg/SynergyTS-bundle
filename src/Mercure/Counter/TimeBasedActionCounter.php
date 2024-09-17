@@ -24,7 +24,7 @@ class TimeBasedActionCounter implements ActionCounterInterface
      * @param bool $flushAtFirstIncrement
      */
     public function __construct(
-        private int $flushInterval = 300,
+        private int $flushInterval = 1000,
         private bool $flushAtFirstIncrement = true,
     ) {
     }
