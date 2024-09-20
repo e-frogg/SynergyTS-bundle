@@ -11,8 +11,15 @@ La librairie [Nom de la Librairie] vise à faciliter la manipulation et l'échan
 
 ## 2. Installation et Configuration
 ### 2.1 Backend (Symfony et Doctrine)
-- Clonage du Dépôt
-- Installation des Dépendances
+#### 2.1.1 Clonage du Dépôt
+```bash
+git clone ...
+```
+
+#### 2.1.2 Installation des Dépendances
+```bash
+composer update
+```
 - Configuration de la Base de Données
 - Exécution des Migrations Doctrine
 - Configuration de Mercure

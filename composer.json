@@ -14,6 +14,8 @@
   },
   "require": {
     "php": ">=8.0.0",
+    "ext-json": "*",
+    "ext-redis": "*",
     "symfony/mercure-bundle": "^0.3.8",
     "symfony/ux-turbo": "^2.16",
     "symfony/stimulus-bundle": "^2.0",

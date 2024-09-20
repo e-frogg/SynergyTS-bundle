@@ -15,10 +15,10 @@ services:
 
 
     Efrogg\Synergy\:
-        resource: '../src/'
+        resource: '../../'
 
     Efrogg\Synergy\Controller\:
-        resource: '../src/Controller/'
+        resource: '../../Controller/'
         tags: ['controller.service_arguments']
 
     Efrogg\Synergy\Helper\EntityHelper:
@@ -32,3 +32,14 @@ services:
 
     Efrogg\Synergy\Mercure\Collector\ActionCollectorInterface:
         class: Efrogg\Synergy\Mercure\Collector\ActionCollector
+
+    redis_persister:
+        class: Redis
+        factory: 'Efrogg\Synergy\AutoSync\RedisAdapter::createConnection'
+        arguments:
+            - '%env(REDIS_HOST)%'
+            - '%env(REDIS_PORT)%'
+            - '%env(REDIS_DB)%'
+
+    Efrogg\Synergy\AutoSync\Persister\AutoSyncPersisterInterface:
+        class: Efrogg\Synergy\AutoSync\Persister\NullPersister

@@ -7,10 +7,6 @@ use Efrogg\Synergy\Data\Criteria;
 class AutoSync
 {
 
-    /**
-     * @var array<string>
-     */
-    private array $topics=[];
 
     /**
      * @var array<string, Criteria>
@@ -19,18 +15,49 @@ class AutoSync
     private array $criteriaCollection=[];
 
     /**
-     * @return string[]
+     * @var int
+     *  Time To Lives in seconds
      */
-    public function getTopic(): array
+    private int $ttl = 0;
+
+
+    public function __construct(
+        private readonly string $id
+    )
     {
-        return $this->topics;
     }
 
-    public function addTopic(string $topic): self
+    /**
+     * @param int $ttl
+     */
+    public function setTtl(int $ttl): void
     {
-        $this->topics[] = $topic;
-        return $this;
+        $this->ttl = $ttl;
     }
+
+    /**
+     * @return int
+     *  Time To Lives in seconds
+     */
+    public function getTtl(): int
+    {
+        return $this->ttl;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTopic(): string
+    {
+        return $this->id;
+    }
+
+
 
     /**
      * @param array<string,Criteria> $criteriaCollection

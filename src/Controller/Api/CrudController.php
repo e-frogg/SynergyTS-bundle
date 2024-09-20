@@ -111,7 +111,7 @@ class CrudController extends AbstractController
         $result = $this->entityRepositoryHelper->search($entityClass, $criteria);
         if($criteria->isAutoSync()) {
             $autoSync = $this->autoSyncService->initAutoSync($entityClass, $criteria, $result);
-            $topics = $autoSync->getTopics();
+            $topics = $autoSync->getTopic();
         }
         return $this->entityResponseBuilder->buildResponse($result->getEntities(), mainIds: $result->getMainIds());
 

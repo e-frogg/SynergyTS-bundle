@@ -5,7 +5,8 @@
 - [ ] DataLoader : event avec main entities (search)
 - [ ] fichier de config yaml
 - [ ] bundles github
-- [ ] trouver un nom
+- [x] trouver un nom : synergy
+- [ ] faire une démo]
 
 
 # installation
