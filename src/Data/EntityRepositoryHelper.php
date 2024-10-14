@@ -129,7 +129,7 @@ class EntityRepositoryHelper
                         return $targetEntity?->getId();
                     }, $mainResult);
 
-                    $ids = array_filter($ids);
+                    $ids = array_unique(array_filter($ids));
                     if (empty($ids)) {
                         continue 2; // next association
                     }
@@ -152,9 +152,7 @@ class EntityRepositoryHelper
             }
 
 
-//            dump((new ReflectionClass($attributeInstance))->getShortName());
-
-            $targetEntityClass = $attributeInstance->targetEntity ?? throw new RuntimeException(
+            $targetEntityClass = $attributeInstance->targetEntity ?? $propertyInfo->class ?? throw new RuntimeException(
                 'no targetEntity found for association ' . $associationPropertyName.'. please precise it in the attribute definition'
             );
             if (!is_a($targetEntityClass, SynergyEntityInterface::class, true)) {
