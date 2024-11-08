@@ -5,17 +5,14 @@ namespace Efrogg\Synergy\Mercure\Collector;
 use Efrogg\Synergy\Mercure\ActionNormalizer;
 use Efrogg\Synergy\Mercure\EntityAction;
 use Efrogg\Synergy\Mercure\MercureActionCollection;
-use JsonException;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 
 class ActionCollector implements ActionCollectorInterface
 {
-
-
     public function __construct(
         private readonly ActionNormalizer $actionNormalizer,
-        private readonly HubInterface $hub
+        private readonly HubInterface $hub,
     ) {
     }
 
@@ -46,7 +43,7 @@ class ActionCollector implements ActionCollectorInterface
     }
 
     /**
-     * @throws JsonException
+     * @throws \JsonException
      */
     public function flush(?string $topicName = null): void
     {
@@ -55,14 +52,15 @@ class ActionCollector implements ActionCollectorInterface
                 $this->flush(...),
                 array_keys($this->actionsByTopic)
             );
+
             return;
         }
 
         $actionCollection = $this->actionsByTopic[$topicName] ?? new MercureActionCollection();
-//        dump(sprintf('flushing %s (%d actions)', $topicName, $actionCollection->count()));
-//        foreach ($actionCollection->getActions() as $action) {
-//            dump(sprintf('action %s : %d entities', $action::getAction(), $action->count()));
-//        }
+        //        dump(sprintf('flushing %s (%d actions)', $topicName, $actionCollection->count()));
+        //        foreach ($actionCollection->getActions() as $action) {
+        //            dump(sprintf('action %s : %d entities', $action::getAction(), $action->count()));
+        //        }
         $actionsJson = json_encode(
             array_map(
                 $this->actionNormalizer->normalize(...),
@@ -88,6 +86,7 @@ class ActionCollector implements ActionCollectorInterface
         if (null === $topicName) {
             // clear all
             $this->actionsByTopic = [];
+
             return;
         }
 

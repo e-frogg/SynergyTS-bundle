@@ -2,15 +2,13 @@
 
 namespace Efrogg\Synergy\Mercure;
 
-use Countable;
-
-class MercureActionCollection implements Countable
+class MercureActionCollection implements \Countable
 {
     /**
      * @param array<EntityAction> $actions
      */
     public function __construct(
-        private array $actions = []
+        private array $actions = [],
     ) {
     }
 
@@ -25,11 +23,13 @@ class MercureActionCollection implements Countable
             foreach ($this->actions as $existingAction) {
                 if ($existingAction->isSame($action)) {
                     $existingAction->merge($action);
+
                     return $this;
                 }
             }
         }
         $this->actions[] = $action;
+
         return $this;
     }
 
@@ -40,5 +40,4 @@ class MercureActionCollection implements Countable
     {
         return $this->actions;
     }
-
 }

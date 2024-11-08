@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Efrogg\Synergy\EventListener;
 
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
-use Doctrine\ORM\Event\PostPersistEventArgs;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Event\PreRemoveEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
@@ -19,10 +18,8 @@ use Efrogg\Synergy\Exception\GrantException;
 #[AsDoctrineListener(event: Events::preRemove)]
 readonly class EntityAclListener
 {
-
-
     public function __construct(
-        private AclManager $aclManager
+        private AclManager $aclManager,
     ) {
     }
 

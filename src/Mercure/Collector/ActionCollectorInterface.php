@@ -19,5 +19,4 @@ interface ActionCollectorInterface
     public function flush(?string $topicName = null): void;
 
     public function clear(?string $topicName): void;
-
 }

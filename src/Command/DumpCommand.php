@@ -10,13 +10,11 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-
 #[AsCommand(
     name: 'Synergy:test',
     description: 'Test command')]
 class DumpCommand extends Command
 {
-
     public function __construct(private readonly EntityRepositoryHelper $entityRepositoryHelper)
     {
         parent::__construct();
@@ -34,25 +32,26 @@ class DumpCommand extends Command
         $output->writeln('Test command executed');
 
         $criteria = new Criteria(['id' => [2, 3]]);
-        $workAssociation = $criteria->getAssociation("works")
+        $workAssociation = $criteria->getAssociation('works')
                                     ->setOrderBy(['id' => 'DESC'])
                                     ->setLimit(2);                 // problème, ça ne fetch qu'un seul work en tout, et pas un par user
         $categoryCriteria = $workAssociation
-            ->getAssociation("category")
+            ->getAssociation('category')
             ->addAssociation('project');
         $categoryCriteria
             ->getAssociation('parent')
             ->getAssociation('parent')
             ->getAssociation('parent')
             ->getAssociation('parent');
-//        $criteria->getAssociation("dailies")
-//                 ->setLimit(10);
+        //        $criteria->getAssociation("dailies")
+        //                 ->setLimit(10);
 
         $result = $this->entityRepositoryHelper->search(User::class, $criteria);
 
         foreach ($result->getEntities() as $synergyEntity) {
-            dump($synergyEntity::class . " : " . $synergyEntity->getId());
+            dump($synergyEntity::class.' : '.$synergyEntity->getId());
         }
+
         return self::SUCCESS;
     }
 }

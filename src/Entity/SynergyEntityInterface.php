@@ -6,11 +6,9 @@ namespace Efrogg\Synergy\Entity;
 
 interface SynergyEntityInterface
 {
-
-    public function getId(): null|string|int;
+    public function getId(): string|int|null;
 
     public function setId(string|int $id): static;
 
     public static function getEntityName(): string;
-
 }

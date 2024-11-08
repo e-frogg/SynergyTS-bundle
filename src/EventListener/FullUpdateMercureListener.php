@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Efrogg\Synergy\EventListener;
 
-
 use Efrogg\Synergy\Context;
 use Efrogg\Synergy\Event\MercureEntityActionEvent;
 use Efrogg\Synergy\Mercure\EntityUpdater;

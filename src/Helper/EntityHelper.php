@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Efrogg\Synergy\Helper;
 
-
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Symfony\Component\Serializer\Attribute\Ignore;
 
 class EntityHelper
 {
-
     /**
      * @var array<class-string<SynergyEntityInterface>>
      */
@@ -25,18 +23,16 @@ class EntityHelper
     /**
      * @var array<string, string>
      */
-    protected static array $entityNamesCache=[];
+    protected static array $entityNamesCache = [];
 
     public static function getEntityName(string $class): string
     {
         static::$entityNamesCache[$class] ??= (new \ReflectionClass($class))->getShortName();
+
         return static::$entityNamesCache[$class];
     }
 
     /**
-     * @param array $_entityDefinitions
-     *
-     * @return void
      * @deprecated not uset for now... maybe later
      */
     public function setEntityDefinitions(array $_entityDefinitions): void
@@ -44,10 +40,6 @@ class EntityHelper
         $this->_entityDefinitions = $_entityDefinitions;
     }
 
-    /**
-     *
-     * @return array
-     */
     public function getEntityDefinitions(): array
     {
         return $this->_entityDefinitions;
@@ -72,8 +64,6 @@ class EntityHelper
     }
 
     /**
-     * @param string $entityName
-     *
      * @return class-string<SynergyEntityInterface>|null
      */
     public function findEntityClass(string $entityName): ?string
@@ -92,10 +82,11 @@ class EntityHelper
     public function findEntityName(?string $className): ?string
     {
         foreach ($this->entityClasses as $entityName => $entityClass) {
-            if($className === $entityClass) {
+            if ($className === $entityClass) {
                 return $entityName;
             }
         }
+
         return null;
     }
 }

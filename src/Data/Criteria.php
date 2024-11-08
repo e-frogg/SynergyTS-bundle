@@ -13,9 +13,6 @@ class Criteria
      *
      * @param array<string,mixed>       $filters
      * @param array<string,string>|null $orderBy
-     * @param int|null                  $limit
-     * @param int|null                  $offset
-     *
      * @param array<string,Criteria>    $associations
      */
     public function __construct(
@@ -24,21 +21,15 @@ class Criteria
         private ?int $limit = null,
         private ?int $offset = null,
         private array $associations = [],
-        private ?QueryBuilder $queryBuilder = null
+        private ?QueryBuilder $queryBuilder = null,
     ) {
     }
 
-    /**
-     * @return QueryBuilder|null
-     */
     public function getQueryBuilder(): ?QueryBuilder
     {
         return $this->queryBuilder;
     }
 
-    /**
-     * @param QueryBuilder|null $queryBuilder
-     */
     public function setQueryBuilder(?QueryBuilder $queryBuilder): void
     {
         $this->queryBuilder = $queryBuilder;
@@ -77,9 +68,9 @@ class Criteria
     public function addFilter(string $key, mixed $filter): static
     {
         $this->filters[$key] = $filter;
+
         return $this;
     }
-
 
     /**
      * @return mixed[]
@@ -103,6 +94,7 @@ class Criteria
     public function setOrderBy(?array $orderBy): static
     {
         $this->orderBy = $orderBy;
+
         return $this;
     }
 
@@ -114,6 +106,7 @@ class Criteria
     public function setLimit(?int $limit): static
     {
         $this->limit = $limit;
+
         return $this;
     }
 
@@ -125,8 +118,7 @@ class Criteria
     public function setOffset(?int $offset): static
     {
         $this->offset = $offset;
+
         return $this;
     }
-
-
 }

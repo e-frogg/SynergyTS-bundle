@@ -8,25 +8,20 @@ use Efrogg\Synergy\Context;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Efrogg\Synergy\Event\MercureEntityActionEvent;
 use Efrogg\Synergy\Mercure\Collector\ActionCollectorInterface;
-use JsonException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
 class EntityUpdater
 {
-
     private bool $enabled = true;
 
     public function __construct(
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly ActionCollectorInterface $actionCollector
+        private readonly ActionCollectorInterface $actionCollector,
     ) {
     }
 
     /**
-     * @param Context $context
-     *
-     * @return string
      * @deprecated, a supprimer dès que possible
      *  pour mettre dans un listener
      */
@@ -38,7 +33,7 @@ class EntityUpdater
     public function dispatchRemove(SynergyEntityInterface $entity, string|int $entityId): void
     {
         $actions = new MercureActionCollection([
-            new EntityRemoveAction([$entity], [$entityId])
+            new EntityRemoveAction([$entity], [$entityId]),
         ]);
         $this->dispatchActions($actions);
     }
@@ -46,7 +41,7 @@ class EntityUpdater
     public function dispatchNew(SynergyEntityInterface $entity): void
     {
         $actions = new MercureActionCollection([
-            new EntityAddAction([$entity])
+            new EntityAddAction([$entity]),
         ]);
         $this->dispatchActions($actions);
     }
@@ -54,16 +49,13 @@ class EntityUpdater
     public function dispatchUpdate(SynergyEntityInterface $entity): void
     {
         $actions = new MercureActionCollection([
-            new EntityUpdateAction([$entity])
+            new EntityUpdateAction([$entity]),
         ]);
         $this->dispatchActions($actions);
     }
 
-
     /**
      * @param array<SynergyEntityInterface> $entities
-     *
-     * @return void
      */
     public function dispatchFullUpdate(array $entities): void
     {
@@ -74,7 +66,7 @@ class EntityUpdater
 
     /**
      * @throws ExceptionInterface
-     * @throws JsonException
+     * @throws \JsonException
      */
     private function dispatchActions(MercureActionCollection $actions): void
     {
@@ -91,8 +83,7 @@ class EntityUpdater
                 $this->actionCollector->addTopicAction($topic, $action);
             }
         }
-//        $this->actionCollector->flush();
-
+        //        $this->actionCollector->flush();
     }
 
     public function disable(): void

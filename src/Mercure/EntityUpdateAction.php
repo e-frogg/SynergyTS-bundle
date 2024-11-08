@@ -7,5 +7,4 @@ namespace Efrogg\Synergy\Mercure;
 class EntityUpdateAction extends EntityAction
 {
     protected static string $action = 'inject';
-
 }
