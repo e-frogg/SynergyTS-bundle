@@ -55,9 +55,6 @@ class Criteria
 
     public function addAssociation(string $propertyPath, ?Criteria $criteria = null): static
     {
-        if(str_contains($propertyName,'.')) {
-            throw new Exception('association name cannot contain a dot for the moment !');
-        }
         $criteria ??= new Criteria();
         $path = explode('.', $propertyPath);
         $propertyName = array_shift($path);
@@ -69,13 +66,19 @@ class Criteria
         return $this;
     }
 
-    public function getAssociation(string $propertyName): Criteria
+    public function getAssociation(string $propertyPath): Criteria
     {
-        if (!isset($this->associations[$propertyName])) {
-            $this->addAssociation($propertyName);
+        if (!isset($this->associations[$propertyPath])) {
+            $this->addAssociation($propertyPath);
         }
 
-        return $this->associations[$propertyName];
+//        $chunks = explode('.', $propertyPath);
+//        $criteria = $this;
+//        foreach ($chunks as $chunk) {
+//            $criteria = $criteria->getAssociation($chunk);
+//        }
+//        return $criteria;
+        return $this->associations[$propertyPath];
     }
 
     public function addFilter(string $key, mixed $filter): static
