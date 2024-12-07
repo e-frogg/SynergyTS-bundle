@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Efrogg\Synergy\Data;
 
 use Doctrine\ORM\QueryBuilder;
+use Exception;
 
 class Criteria
 {
@@ -54,6 +55,9 @@ class Criteria
 
     public function addAssociation(string $propertyPath, ?Criteria $criteria = null): static
     {
+        if(str_contains($propertyName,'.')) {
+            throw new Exception('association name cannot contain a dot for the moment !');
+        }
         $criteria ??= new Criteria();
         $path = explode('.', $propertyPath);
         $propertyName = array_shift($path);
