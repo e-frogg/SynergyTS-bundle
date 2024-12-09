@@ -88,7 +88,7 @@ class EntityUpdater
             $this->eventDispatcher->dispatch($topicEvent);
 
             foreach ($topicEvent->getTopicActions() as $topic => $entityAction) {
-                $this->actionCollector->addTopicAction($topic, $action);
+                $this->actionCollector->addTopicAction($topic, $entityAction);
             }
         }
 //        $this->actionCollector->flush();

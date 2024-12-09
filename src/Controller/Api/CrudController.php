@@ -156,7 +156,7 @@ class CrudController extends AbstractController
 
         $body = $this->extractJson($request);
 
-        if($action === 'edit' && $body->has('id') && $body->get('id') !== $entity?->getId()) {
+        if($action === 'edit' && $body->has('id') && (string)$body->get('id') !== (string)$entity?->getId()) {
             return new JsonResponse(['error' => 'Not allowed to change entity Id'], 400);
         }
         $entity = $this->SynergyEnricher->createOrEdit($entityClass, $body, $entity);

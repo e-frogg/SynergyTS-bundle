@@ -46,4 +46,9 @@ class BufferedActionCollector implements ActionCollectorInterface
         $this->decorated->clear($topicName);
     }
 
+    public function __destruct()
+    {
+        $this->flush();
+    }
+
 }

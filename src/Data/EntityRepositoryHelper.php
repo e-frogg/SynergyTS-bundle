@@ -39,8 +39,9 @@ class EntityRepositoryHelper
      * @throws ReflectionException
      * @throws GrantException
      */
-    public function search(string $entityClass, Criteria $criteria, bool $isMain = true): SearchResult
+    public function search(string $entityClass, ?Criteria $criteria = null, bool $isMain = true): SearchResult
     {
+        $criteria ??= new Criteria();
         $this->aclManager->checkClassIsGranted($entityClass, AclManager::READ);
         $lastMainIds = [];
 

@@ -37,9 +37,10 @@ class MercureEntityActionEvent
         return $this->entityAction->getEntities();
     }
 
-    public function addTopicAction(string $topic, EntityAction $action): void
+    public function addTopicAction(string $topic, EntityAction $action): self
     {
         $this->topicActions[$topic] = $action;
+        return $this;
     }
 
     /**

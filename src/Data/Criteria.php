@@ -30,6 +30,19 @@ class Criteria
     }
 
     /**
+     * @param array<string,mixed> $simpleFilters
+     *
+     * @return static
+     */
+    public static function create(array $simpleFilters): static
+    {
+        $criteria = new static();
+        $criteria->filters = $simpleFilters;
+
+        return $criteria;
+    }
+
+    /**
      * @return QueryBuilder|null
      */
     public function getQueryBuilder(): ?QueryBuilder
@@ -72,6 +85,7 @@ class Criteria
             $this->addAssociation($propertyPath);
         }
 
+        //TODO: handle nested associations
 //        $chunks = explode('.', $propertyPath);
 //        $criteria = $this;
 //        foreach ($chunks as $chunk) {
