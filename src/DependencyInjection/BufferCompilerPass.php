@@ -19,7 +19,7 @@ class BufferCompilerPass implements CompilerPassInterface
         $actionCollectorDefinition = $container->findDefinition(ActionCollectorInterface::class);
 
         //TODO : conterDefinition en fonction d'une config (time based / countBased....)
-        $counterDefinition = new Definition(TimeBasedActionCounter::class);
+        $counterDefinition = new Definition(TimeBasedActionCounter::class, [1000,false]);
         $decoratedDefinition = new Definition(BufferedActionCollector::class, [
             $actionCollectorDefinition,
             $counterDefinition
