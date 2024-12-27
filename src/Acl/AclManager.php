@@ -21,7 +21,7 @@ class AclManager
     public const array ACTION_LIST = [self::CREATE, self::READ, self::UPDATE, self::DELETE];
 
     private bool $defaultGrant = false;
-    
+
     /**
      * @var array<string,bool>
      */
@@ -43,6 +43,8 @@ class AclManager
     )
     {
     }
+
+    private bool $enabled = true;
 
     /**
      * @param bool $defaultGrant
@@ -123,6 +125,9 @@ class AclManager
      */
     public function checkClassIsGranted(string $entityClass, string $string): void
     {
+        if(!$this->isEnabled()) {
+            return;
+        }
         $this->isClassGranted($entityClass, $string, true);
     }
 
@@ -132,6 +137,9 @@ class AclManager
      */
     public function checkEntityIsGranted(SynergyEntityInterface $entity, string $action): void
     {
+        if(!$this->isEnabled()) {
+            return;
+        }
         $this->isEntityGranted($entity, $action, true);
     }
 
@@ -141,6 +149,9 @@ class AclManager
      */
     public function isEntityGranted(SynergyEntityInterface $entity, string $action, bool $throwException = false): bool
     {
+        if(!$this->isEnabled()) {
+            return true;
+        }
         try {
             $classGranted = $this->isClassGranted(get_class($entity), $action, true);
             $violations = [];
@@ -164,6 +175,9 @@ class AclManager
 
     public function isClassGranted(string $entityClass, string $action, bool $throwException = false): bool
     {
+        if(!$this->isEnabled()) {
+            return true;
+        }
         $defaultGrant =
             $this->defaultEntityGrants[$entityClass][$action]
             ?? $this->defaultActionGrants[$action]
@@ -185,7 +199,7 @@ class AclManager
 
         return $event->isGranted();
     }
-    
+
 
     /**
      * @param string $action
@@ -199,5 +213,20 @@ class AclManager
         }
     }
 
+    /**
+     * @return bool
+     */
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    /**
+     * @param bool $enabled
+     */
+    public function setEnabled(bool $enabled): void
+    {
+        $this->enabled = $enabled;
+    }
 
 }
