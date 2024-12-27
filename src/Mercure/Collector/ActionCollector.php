@@ -15,7 +15,8 @@ class ActionCollector implements ActionCollectorInterface
 
     public function __construct(
         private readonly ActionNormalizer $actionNormalizer,
-        private readonly HubInterface $hub
+        private readonly HubInterface $hub,
+        private readonly bool $mercureEnabled = true,
     ) {
     }
 
@@ -26,6 +27,9 @@ class ActionCollector implements ActionCollectorInterface
 
     public function addTopicAction(string $topicName, EntityAction $entityAction): void
     {
+        if(!$this->mercureEnabled) {
+            return;
+        }
         if (!isset($this->actionsByTopic[$topicName])) {
             $this->actionsByTopic[$topicName] = new MercureActionCollection();
         }
@@ -50,6 +54,9 @@ class ActionCollector implements ActionCollectorInterface
      */
     public function flush(?string $topicName = null): void
     {
+        if(!$this->mercureEnabled) {
+            return;
+        }
         if (null === $topicName) {
             array_map(
                 $this->flush(...),

@@ -8,6 +8,10 @@ parameters:
 #        exampleEntity:
 #            read: true
 
+    env(MERCURE_ENABLED): true
+
+    mercure.enabled: '%env(bool:MERCURE_ENABLED)%'
+
 services:
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
@@ -32,3 +36,5 @@ services:
 
     Efrogg\Synergy\Mercure\Collector\ActionCollectorInterface:
         class: Efrogg\Synergy\Mercure\Collector\ActionCollector
+        arguments:
+            $mercureEnabled: '%mercure.enabled%'
