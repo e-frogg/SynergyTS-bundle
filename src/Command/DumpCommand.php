@@ -2,6 +2,7 @@
 
 namespace Efrogg\Synergy\Command;
 
+use App\Entity\Project;
 use App\Entity\User;
 use Efrogg\Synergy\Data\Criteria;
 use Efrogg\Synergy\Data\EntityRepositoryHelper;
@@ -12,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 
 #[AsCommand(
-    name: 'Synergy:test',
+    name: 'Synergy:dump',
     description: 'Test command')]
 class DumpCommand extends Command
 {
@@ -34,21 +35,21 @@ class DumpCommand extends Command
         $output->writeln('Test command executed');
 
         $criteria = new Criteria(['id' => [2, 3]]);
-        $workAssociation = $criteria->getAssociation("works")
-                                    ->setOrderBy(['id' => 'DESC'])
-                                    ->setLimit(2);                 // problème, ça ne fetch qu'un seul work en tout, et pas un par user
-        $categoryCriteria = $workAssociation
-            ->getAssociation("category")
-            ->addAssociation('project');
-        $categoryCriteria
-            ->getAssociation('parent')
-            ->getAssociation('parent')
-            ->getAssociation('parent')
-            ->getAssociation('parent');
+//        $workAssociation = $criteria->getAssociation("releases")
+//                                    ->setOrderBy(['id' => 'DESC'])
+//                                    ->setLimit(2);                 // problème, ça ne fetch qu'un seul work en tout, et pas un par user
+//        $categoryCriteria = $workAssociation
+//            ->getAssociation("category")
+//            ->addAssociation('project');
+//        $categoryCriteria
+//            ->getAssociation('parent')
+//            ->getAssociation('parent')
+//            ->getAssociation('parent')
+//            ->getAssociation('parent');
 //        $criteria->getAssociation("dailies")
 //                 ->setLimit(10);
 
-        $result = $this->entityRepositoryHelper->search(User::class, $criteria);
+        $result = $this->entityRepositoryHelper->search(Project::class, $criteria);
 
         foreach ($result->getEntities() as $synergyEntity) {
             dump($synergyEntity::class . " : " . $synergyEntity->getId());
