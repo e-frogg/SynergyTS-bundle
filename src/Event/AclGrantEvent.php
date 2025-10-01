@@ -8,7 +8,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 abstract class AclGrantEvent
 {
-
     public const int FORBIDDEN = Response::HTTP_FORBIDDEN;
     public const int UNAUTHORIZED = Response::HTTP_UNAUTHORIZED;
 
@@ -24,7 +23,6 @@ abstract class AclGrantEvent
     ) {
     }
 
-
     public function getAction(): string
     {
         return $this->action;
@@ -38,6 +36,7 @@ abstract class AclGrantEvent
     public function setGranted(bool $granted): bool
     {
         $this->granted = $granted;
+
         return $granted;
     }
 
@@ -45,21 +44,16 @@ abstract class AclGrantEvent
     {
         $this->granted = false;
         $this->violations[] = $violation;
-        $this->setCode(max($this->code,$violationCode));
+        $this->setCode(max($this->code, $violationCode));
+
         return false;
     }
 
-    /**
-     * @param int $code
-     */
     public function setCode(int $code): void
     {
         $this->code = $code;
     }
 
-    /**
-     * @return int
-     */
     public function getCode(): int
     {
         return $this->code;
@@ -72,5 +66,4 @@ abstract class AclGrantEvent
     {
         return $this->violations;
     }
-
 }

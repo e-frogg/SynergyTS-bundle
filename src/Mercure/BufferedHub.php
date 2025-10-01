@@ -9,11 +9,9 @@ use Symfony\Component\Mercure\Update;
 
 class BufferedHub implements HubInterface
 {
-
     public function __construct(
         private readonly HubInterface $hub,
-    )
-    {
+    ) {
     }
 
     public function getUrl(): string

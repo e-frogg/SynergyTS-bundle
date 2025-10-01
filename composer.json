@@ -1,6 +1,6 @@
 {
   "name": "efrogg/synergy-bundle",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A simple API for JavaScript",
   "config": {
     "optimize-autoloader": true,
@@ -13,7 +13,7 @@
     "files": []
   },
   "require": {
-    "php": ">=8.0.0",
+    "php": ">=8.4.0",
     "symfony/mercure-bundle": "^0.3.8",
     "symfony/ux-turbo": "^2.16",
     "symfony/stimulus-bundle": "^2.0",

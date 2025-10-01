@@ -4,22 +4,16 @@ declare(strict_types=1);
 
 namespace Efrogg\Synergy\Exception;
 
-use Exception;
-use Throwable;
-
-class GrantException extends Exception
+class GrantException extends \Exception
 {
     /**
-     * @param string         $message
-     * @param int            $code
-     * @param array<string>  $violations
-     * @param Throwable|null $previous
+     * @param array<string> $violations
      */
     public function __construct(
-        string $message = "",
+        string $message = '',
         int $code = 0,
         private readonly array $violations = [],
-        ?Throwable $previous = null
+        ?\Throwable $previous = null
     ) {
         parent::__construct($message, $code, $previous);
     }

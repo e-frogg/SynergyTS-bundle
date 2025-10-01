@@ -18,10 +18,8 @@ class TimeBasedActionCounter implements ActionCounterInterface
      */
     private array $isfirstAdd = [];
 
-
     /**
-     * @param int  $flushInterval time between 2 flushes (in ms)
-     * @param bool $flushAtFirstIncrement
+     * @param int $flushInterval time between 2 flushes (in ms)
      */
     public function __construct(
         private int $flushInterval = 1000,
@@ -29,14 +27,10 @@ class TimeBasedActionCounter implements ActionCounterInterface
     ) {
     }
 
-    /**
-     * @param int $flushInterval
-     */
     public function setFlushInterval(int $flushInterval): void
     {
         $this->flushInterval = $flushInterval;
     }
-
 
     public function increment(string $topicName, EntityAction $entityAction): void
     {
@@ -57,6 +51,7 @@ class TimeBasedActionCounter implements ActionCounterInterface
                 $toFlush[] = $topicName;
             }
         }
+
         return $toFlush;
     }
 
@@ -81,11 +76,6 @@ class TimeBasedActionCounter implements ActionCounterInterface
         return round(microtime(true) * 1000);
     }
 
-    /**
-     * @param int $firstAddTime
-     *
-     * @return bool
-     */
     private function isExpired(int $firstAddTime): bool
     {
         return $this->nowInMS() - $firstAddTime > $this->flushInterval;

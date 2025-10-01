@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Efrogg\Synergy\Serializer\Normalizer;
 
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
-use InvalidArgumentException;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
@@ -14,7 +13,7 @@ class EntityCollectionNormalizer
     protected static int $defaultAutoDiscoverLevels = 2;
 
     /**
-     * for avoiding circular references and multiple serialization of the same entity
+     * for avoiding circular references and multiple serialization of the same entity.
      *
      * @var array<int,bool>
      */
@@ -30,9 +29,10 @@ class EntityCollectionNormalizer
      * @param iterable<SynergyEntityInterface> $entities
      *
      * @return array<string, array<string,array<array<string,mixed>>>>
+     *
      * @throws ExceptionInterface
      */
-    public function normalize(iterable $entities, int $autoDiscoverLevels = null): array
+    public function normalize(iterable $entities, ?int $autoDiscoverLevels = null): array
     {
         $autoDiscoverLevels ??= self::$defaultAutoDiscoverLevels;
         $this->resetNormalizedIndex();
@@ -44,7 +44,7 @@ class EntityCollectionNormalizer
     }
 
     /**
-     * @param iterable<SynergyEntityInterface>            $entities
+     * @param iterable<SynergyEntityInterface>                        $entities
      * @param array<string, array<string,array<array<string,mixed>>>> $data
      *
      * @throws ExceptionInterface
@@ -53,13 +53,13 @@ class EntityCollectionNormalizer
     {
         $this->genericEntityNormalizer->clearDiscoveredEntities();
         foreach ($entities as $entity) {
-            if(!$entity instanceof SynergyEntityInterface) {
-                throw new InvalidArgumentException('Normalizer error. Only normalize array ot SynergyEntity');
+            if (!$entity instanceof SynergyEntityInterface) {
+                throw new \InvalidArgumentException('Normalizer error. Only normalize array ot SynergyEntity');
             }
             $entityName = $entity::getEntityName();
 
             // évite les doublons
-//            $indexKey = $entityName . '-' . $entity->getId();
+            //            $indexKey = $entityName . '-' . $entity->getId();
             $indexKey = spl_object_id($entity);
             if (isset($this->normalizedIndex[$indexKey])) {
                 // double vérif, mais n'arrive pas normalement
@@ -68,7 +68,7 @@ class EntityCollectionNormalizer
 
             $data[$entityName] ??= [
                 'entityName' => $entityName,
-                'entities'   => []
+                'entities' => [],
             ];
             $this->normalizedIndex[$indexKey] = true;
             /** @var array<string,mixed> $normalized */
@@ -78,7 +78,7 @@ class EntityCollectionNormalizer
         if ($autoDiscoverLevels > 0 && $this->genericEntityNormalizer->hasDiscoveredEntities()) {
             // filter out already serialized entities
             $discovers = array_filter($this->genericEntityNormalizer->getDiscoveredEntities(), function ($discoveredEntity) {
-                return !isset($this->normalizedIndex[$discoveredEntity::getEntityName() . '-' . $discoveredEntity->getId()]);
+                return !isset($this->normalizedIndex[$discoveredEntity::getEntityName().'-'.$discoveredEntity->getId()]);
             });
 
             if (count($discovers) > 0) {
@@ -87,13 +87,8 @@ class EntityCollectionNormalizer
         }
     }
 
-    /**
-     * @return void
-     */
     private function resetNormalizedIndex(): void
     {
         $this->normalizedIndex = [];
     }
-
-
 }

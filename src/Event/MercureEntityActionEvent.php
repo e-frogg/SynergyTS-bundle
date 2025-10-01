@@ -7,13 +7,9 @@ use Efrogg\Synergy\Mercure\EntityAction;
 
 class MercureEntityActionEvent
 {
-
     /** @var array<string,EntityAction> */
     private array $topicActions = [];
 
-    /**
-     * @param EntityAction $entityAction
-     */
     public function __construct(
         private readonly EntityAction $entityAction
     ) {
@@ -40,6 +36,7 @@ class MercureEntityActionEvent
     public function addTopicAction(string $topic, EntityAction $action): self
     {
         $this->topicActions[$topic] = $action;
+
         return $this;
     }
 

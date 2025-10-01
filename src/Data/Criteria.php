@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Efrogg\Synergy\Data;
 
 use Doctrine\ORM\QueryBuilder;
-use Exception;
 
 class Criteria
 {
@@ -14,9 +13,6 @@ class Criteria
      *
      * @param array<string,mixed>       $filters
      * @param array<string,string>|null $orderBy
-     * @param int|null                  $limit
-     * @param int|null                  $offset
-     *
      * @param array<string,Criteria>    $associations
      */
     public function __construct(
@@ -31,8 +27,6 @@ class Criteria
 
     /**
      * @param array<string,mixed> $simpleFilters
-     *
-     * @return static
      */
     public static function create(array $simpleFilters): static
     {
@@ -42,17 +36,11 @@ class Criteria
         return $criteria;
     }
 
-    /**
-     * @return QueryBuilder|null
-     */
     public function getQueryBuilder(): ?QueryBuilder
     {
         return $this->queryBuilder;
     }
 
-    /**
-     * @param QueryBuilder|null $queryBuilder
-     */
     public function setQueryBuilder(?QueryBuilder $queryBuilder): void
     {
         $this->queryBuilder = $queryBuilder;
@@ -85,22 +73,22 @@ class Criteria
             $this->addAssociation($propertyPath);
         }
 
-        //TODO: handle nested associations
-//        $chunks = explode('.', $propertyPath);
-//        $criteria = $this;
-//        foreach ($chunks as $chunk) {
-//            $criteria = $criteria->getAssociation($chunk);
-//        }
-//        return $criteria;
+        // TODO: handle nested associations
+        //        $chunks = explode('.', $propertyPath);
+        //        $criteria = $this;
+        //        foreach ($chunks as $chunk) {
+        //            $criteria = $criteria->getAssociation($chunk);
+        //        }
+        //        return $criteria;
         return $this->associations[$propertyPath];
     }
 
     public function addFilter(string $key, mixed $filter): static
     {
         $this->filters[$key] = $filter;
+
         return $this;
     }
-
 
     /**
      * @return mixed[]
@@ -124,6 +112,7 @@ class Criteria
     public function setOrderBy(?array $orderBy): static
     {
         $this->orderBy = $orderBy;
+
         return $this;
     }
 
@@ -135,6 +124,7 @@ class Criteria
     public function setLimit(?int $limit): static
     {
         $this->limit = $limit;
+
         return $this;
     }
 
@@ -146,8 +136,7 @@ class Criteria
     public function setOffset(?int $offset): static
     {
         $this->offset = $offset;
+
         return $this;
     }
-
-
 }

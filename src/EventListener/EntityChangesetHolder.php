@@ -37,10 +37,11 @@ class EntityChangesetHolder
     public function getChangeset(SynergyEntityInterface $entity): ?EntityChangeset
     {
         $objectId = spl_object_id($entity);
-        $changeset = $this->changesets[$objectId]??null;
+        $changeset = $this->changesets[$objectId] ?? null;
         if (null === $changeset) {
             return null;
         }
+
         return new EntityChangeset($changeset);
     }
 }

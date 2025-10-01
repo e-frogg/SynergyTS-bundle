@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Efrogg\Synergy\Mercure;
 
-use Countable;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 
-abstract class EntityAction implements Countable
+abstract class EntityAction implements \Countable
 {
     protected static string $action;
     /** @var array<string,mixed> */
@@ -23,7 +22,7 @@ abstract class EntityAction implements Countable
 
     public static function getAction(): string
     {
-        return static::$action??throw new \LogicException('Action not defined');
+        return static::$action ?? throw new \LogicException('Action not defined');
     }
 
     /**
@@ -41,12 +40,11 @@ abstract class EntityAction implements Countable
 
     /**
      * @param array<SynergyEntityInterface> $entities
-     *
-     * @return static
      */
     public function setEntities(array $entities): static
     {
         $this->entities = $entities;
+
         return $this;
     }
 
@@ -66,7 +64,7 @@ abstract class EntityAction implements Countable
     public function merge(EntityAction $action): void
     {
         foreach ($action->getEntities() as $newEntity) {
-            if(in_array($newEntity, $this->entities, true)) {
+            if (in_array($newEntity, $this->entities, true)) {
                 continue;
             }
             $this->entities[] = $newEntity;

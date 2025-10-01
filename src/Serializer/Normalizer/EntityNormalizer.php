@@ -2,10 +2,8 @@
 
 namespace Efrogg\Synergy\Serializer\Normalizer;
 
-use DateTimeInterface;
 use Doctrine\Common\Collections\Collection;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
-use Exception;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
 use Symfony\Component\PropertyInfo\Type;
@@ -20,12 +18,12 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
 
     public const int DISCOVER_NONE = 0;
     /**
-     * discover oneToMany (ex : vehicle -> vehicleModel)
+     * discover oneToMany (ex : vehicle -> vehicleModel).
      */
     public const int DISCOVER_ASCENDING = 1;
 
     /**
-     * discover manyToOne (ex : vehicleModel -> vehicles)
+     * discover manyToOne (ex : vehicleModel -> vehicles).
      */
     public const int DISCOVER_DESCENDING = 2;
 
@@ -37,9 +35,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
     private array $discoveredEntities = [];
 
     /**
-     * activate entity discovery for relations (oneToMany, manyToOne)
-     *
-     * @var int
+     * activate entity discovery for relations (oneToMany, manyToOne).
      */
     private int $autoDiscover = self::DISCOVER_NONE;
 
@@ -64,12 +60,9 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
         protected PropertyTypeExtractorInterface $propertyTypeExtractor,
         protected PropertyAccessorInterface $propertyAccessor
     ) {
-//        $this->propertyAccessor ??= PropertyAccess::createPropertyAccessor();
+        //        $this->propertyAccessor ??= PropertyAccess::createPropertyAccessor();
     }
 
-    /**
-     * @param int $autoDiscover
-     */
     public function setAutoDiscover(int $autoDiscover): void
     {
         $this->autoDiscover = $autoDiscover;
@@ -77,18 +70,18 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
 
     /**
      * @param SynergyEntityInterface $object
-     * @param array<mixed>         $context
+     * @param array<mixed>           $context
      *
      * @return array<mixed>
      */
-    public function normalize($object, string $format = null, array $context = []): array
+    public function normalize($object, ?string $format = null, array $context = []): array
     {
-//        echo("<br><br>class ".$object::class);
+        //        echo("<br><br>class ".$object::class);
         $meta = $this->classMetadataFactory->getMetadataFor($object);
-//        echo(" -> ".$meta->getName());
+        //        echo(" -> ".$meta->getName());
         $result = [];
         foreach ($meta->getAttributesMetadata() as $attributeMetadata) {
-//                echo("<br>attribute ".$attributeMetadata->getName().' : '.($attributeMetadata->isIgnored() ? 'ignored' : 'not ignored' ));
+            //                echo("<br>attribute ".$attributeMetadata->getName().' : '.($attributeMetadata->isIgnored() ? 'ignored' : 'not ignored' ));
             if ($attributeMetadata->isIgnored()) {
                 continue;
             }
@@ -103,7 +96,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             }
             try {
                 $attributeValue = $this->propertyAccessor->getValue($object, $attributeName);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 continue;
             }
             $key = $attributeName;
@@ -119,9 +112,9 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
                                     if ($item instanceof SynergyEntityInterface) {
                                         $this->addDiscoveredEntity($item, self::DISCOVER_DESCENDING);
                                         $collection[] = $item->getId(); // ok, does not fetch the entity lazy
-//                            } else {
-//                            $collection[] = $item; // ??
-//                                throw new \InvalidArgumentException('SynergyEntityInterface expected. '.$item::class.' given');
+                                        //                            } else {
+                                        //                            $collection[] = $item; // ??
+                                        //                                throw new \InvalidArgumentException('SynergyEntityInterface expected. '.$item::class.' given');
                                     }
                                 }
                                 $value = $collection;
@@ -130,7 +123,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
                             }
                         }
                     }
-                } elseif ($attributeValue instanceof DateTimeInterface) {
+                } elseif ($attributeValue instanceof \DateTimeInterface) {
                     $value = $attributeValue->format('Y-m-d H:i:s');
                 } elseif ($type->getClassName()) {
                     if (is_a($type->getClassName(), SynergyEntityInterface::class, true)) {
@@ -138,12 +131,12 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
                         if ($attributeValue instanceof SynergyEntityInterface) {
                             $this->addDiscoveredEntity($attributeValue, self::DISCOVER_ASCENDING);
                         }
-                        $key = $attributeName . 'Id';
+                        $key = $attributeName.'Id';
                         $value = $attributeValue?->getId(); // ok, does not fetch the entity lazy
                     } else {
                         // object non Synergy => non sérialisé
-//                        echo "<br>skip ! SynergyEntityInterface expected. ".$type->getClassName()." given";
-                        continue(2);
+                        //                        echo "<br>skip ! SynergyEntityInterface expected. ".$type->getClassName()." given";
+                        continue 2;
                     }
                 }
             }
@@ -153,7 +146,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
         return $result;
     }
 
-    public function supportsNormalization($data, string $format = null, array $context = []): bool
+    public function supportsNormalization($data, ?string $format = null, array $context = []): bool
     {
         return $data instanceof SynergyEntityInterface;
     }
@@ -171,8 +164,8 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             return;
         }
         $entityId = $entity->getId();
-        $uniqueKey = $entity::getEntityName() . '-' . $entityId;
-        if ($entityId !== null && !isset($this->discoveredEntities[$uniqueKey])) {
+        $uniqueKey = $entity::getEntityName().'-'.$entityId;
+        if (null !== $entityId && !isset($this->discoveredEntities[$uniqueKey])) {
             $this->discoveredEntities[$uniqueKey] = $entity;
         }
     }
@@ -192,14 +185,9 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
 
     public function hasDiscoveredEntities(): bool
     {
-        return (bool)count($this->discoveredEntities);
+        return (bool) count($this->discoveredEntities);
     }
 
-    /**
-     * @param int $discoveryMode
-     *
-     * @return bool
-     */
     private function acceptDiscovery(int $discoveryMode): bool
     {
         return ($this->autoDiscover & $discoveryMode) === $discoveryMode;
@@ -216,6 +204,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
                 return true;
             }
         }
+
         return false;
     }
 
@@ -228,6 +217,6 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
 
         // et si ça suffit pas, on peut piocher dans getCollectionValueTypes
         // et vérifier si on a une relation ?
-//        $collectionType = $type->getCollectionValueTypes();
+        //        $collectionType = $type->getCollectionValueTypes();
     }
 }

@@ -9,15 +9,13 @@ use Doctrine\ORM\EntityRepository;
 use Efrogg\Synergy\Context;
 use Efrogg\Synergy\Controller\Trait\JsonRequestTrait;
 use Efrogg\Synergy\Data\CriteriaParser;
-use Efrogg\Synergy\Data\EntityResponseBuilder;
 use Efrogg\Synergy\Data\EntityRepositoryHelper;
+use Efrogg\Synergy\Data\EntityResponseBuilder;
 use Efrogg\Synergy\Entity\SynergyEnricher;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Efrogg\Synergy\Exception\SerializerException;
 use Efrogg\Synergy\Helper\EntityHelper;
 use Efrogg\Synergy\Mercure\EntityUpdater;
-use Exception;
-use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,7 +28,6 @@ use Symfony\Component\Serializer\Exception\ExceptionInterface;
 class CrudController extends AbstractController
 {
     use JsonRequestTrait;
-
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -52,31 +49,29 @@ class CrudController extends AbstractController
 
         $entities = [];
         foreach ($this->entityHelper->getEntityClasses() as $class) {
-            if(!is_a($class, SynergyEntityInterface::class, true)) {
-                throw new Exception(sprintf('Class %s is not an SynergyEntityInterface', $class));
-            }
+//            if (!is_a($class, SynergyEntityInterface::class, true)) {
+//                throw new \Exception(sprintf('Class %s is not an SynergyEntityInterface', $class));
+//            }
             $repo = $this->entityManager->getRepository($class);
             $entities = [...$entities, ...$repo->findAll()];
         }
 
         // add mercure topic
-        $versionTopic = EntityUpdater::getFullUpdateTopic(Context::createDefaultContext()) ;
+        $versionTopic = EntityUpdater::getFullUpdateTopic(Context::createDefaultContext());
 
         return $this->entityResponseBuilder->buildResponse($entities, null, $versionTopic);
-
     }
-
 
     /**
      * @throws ExceptionInterface
      */
     #[Route('/{entityName}/{id}', name: 'Synergy__entity_get', methods: ['GET'], priority: 2)]
-    public function getOne(Request $request,string $id, string $entityName): JsonResponse
+    public function getOne(Request $request, string $id, string $entityName): JsonResponse
     {
         $this->configureDiscover($request);
         $repo = $this->getEntityRepository($entityName);
         $entity = $repo->find($id);
-        if(null === $entity) {
+        if (null === $entity) {
             return new JsonResponse(['error' => 'Entity not found'], 404);
         }
 
@@ -109,13 +104,11 @@ class CrudController extends AbstractController
         $result = $this->entityRepositoryHelper->search($entityClass, $criteria);
 
         return $this->entityResponseBuilder->buildResponse($result->getEntities(), mainIds: $result->getMainIds());
-
     }
-
 
     /**
      * @throws SerializerException
-     * @throws JsonException
+     * @throws \JsonException
      */
     #[Route('/{entityName}', name: 'Synergy__entity_create', methods: ['POST'], priority: 2)]
     public function create(Request $request, string $entityName): JsonResponse
@@ -128,7 +121,7 @@ class CrudController extends AbstractController
 
     /**
      * @throws SerializerException
-     * @throws JsonException
+     * @throws \JsonException
      */
     #[Route('/{entityName}/{id}', name: 'Synergy__entity_edit', methods: ['PUT'], priority: 2)]
     public function edit(Request $request, string $entityName, string $id): JsonResponse
@@ -142,21 +135,21 @@ class CrudController extends AbstractController
         if (null === $entity) {
             return new JsonResponse(['error' => 'Entity not found'], 404);
         }
+
         return $this->createOrEdit($request, $entityClass, 'edit', $entity);
     }
 
     /**
      * @param class-string<SynergyEntityInterface> $entityClass
      *
-     * @throws JsonException
+     * @throws \JsonException
      * @throws SerializerException
      */
     private function createOrEdit(Request $request, string $entityClass, string $action, ?SynergyEntityInterface $entity = null): JsonResponse
     {
-
         $body = $this->extractJson($request);
 
-        if($action === 'edit' && $body->has('id') && (string)$body->get('id') !== (string)$entity?->getId()) {
+        if ('edit' === $action && $body->has('id') && (string) $body->get('id') !== (string) $entity?->getId()) {
             return new JsonResponse(['error' => 'Not allowed to change entity Id'], 400);
         }
         $entity = $this->SynergyEnricher->createOrEdit($entityClass, $body, $entity);
@@ -168,7 +161,8 @@ class CrudController extends AbstractController
         $responseData = [
             'id' => $entity->getId(),
         ];
-        $responseCode = $action === 'create' ? Response::HTTP_CREATED : Response::HTTP_OK;
+        $responseCode = 'create' === $action ? Response::HTTP_CREATED : Response::HTTP_OK;
+
         return new JsonResponse($responseData, $responseCode);
     }
 
@@ -188,8 +182,6 @@ class CrudController extends AbstractController
     }
 
     /**
-     * @param string $entityName
-     *
      * @return EntityRepository<SynergyEntityInterface>
      */
     private function getEntityRepository(string $entityName): EntityRepository
@@ -199,6 +191,7 @@ class CrudController extends AbstractController
 
         /** @var EntityRepository<SynergyEntityInterface> $entityRepository */
         $entityRepository = $this->entityManager->getRepository($entityClass);
+
         return $entityRepository;
     }
 
@@ -206,5 +199,4 @@ class CrudController extends AbstractController
     {
         $this->entityResponseBuilder->setDiscoverLevel($request->query->getInt('discover'));
     }
-
 }

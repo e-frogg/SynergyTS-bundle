@@ -21,7 +21,6 @@ use Efrogg\Synergy\Mercure\EntityUpdater;
 #[AsDoctrineListener(event: Events::postRemove)]
 class EntityMercureListener
 {
-
     /**
      * @var array<string,int|string>
      */
@@ -41,6 +40,7 @@ class EntityMercureListener
             $this->entityChangesetHolder->setChangeset($entity, $event->getEntityChangeSet());
         }
     }
+
     public function postUpdate(PostUpdateEventArgs $event): void
     {
         $entity = $event->getObject();
@@ -62,7 +62,7 @@ class EntityMercureListener
         $entity = $event->getObject();
         if ($entity instanceof SynergyEntityInterface) {
             $id = $entity->getId();
-            if(null !== $id) {
+            if (null !== $id) {
                 $hash = spl_object_hash($entity);
                 $this->removedObjects[$hash] = $id;
             }
@@ -79,10 +79,9 @@ class EntityMercureListener
                 $entity->setId($entityId);          // reinject
 
                 unset($this->removedObjects[$hash]);
-                $this->entityUpdater->dispatchRemove($entity,$entityId);
-//                throw new \Exception('postRemove reimplement setId');
+                $this->entityUpdater->dispatchRemove($entity, $entityId);
+                //                throw new \Exception('postRemove reimplement setId');
             }
         }
     }
-
 }

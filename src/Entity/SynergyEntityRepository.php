@@ -8,6 +8,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
  * @template T of SynergyEntityInterface
+ *
  * @extends ServiceEntityRepository<T>
  */
 abstract class SynergyEntityRepository extends ServiceEntityRepository implements SynergyEntityRepositoryInterface
@@ -16,5 +17,4 @@ abstract class SynergyEntityRepository extends ServiceEntityRepository implement
     {
         return $this->getEntityName();
     }
-
 }

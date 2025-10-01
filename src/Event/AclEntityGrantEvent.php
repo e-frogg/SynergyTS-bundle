@@ -8,7 +8,6 @@ use Efrogg\Synergy\Entity\SynergyEntityInterface;
 
 class AclEntityGrantEvent extends AclGrantEvent
 {
-
     /**
      * @param array<string> $violations
      */
@@ -25,5 +24,4 @@ class AclEntityGrantEvent extends AclGrantEvent
     {
         return $this->entity;
     }
-
 }
