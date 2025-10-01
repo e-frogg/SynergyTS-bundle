@@ -39,6 +39,7 @@ class AclManager
     public function __construct(
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly EntityHelper $entityHelper,
+        private readonly AclContext $context,
     ) {
     }
 
@@ -110,7 +111,7 @@ class AclManager
      */
     public function checkClassIsGranted(string $entityClass, string $string): void
     {
-        if (!$this->isEnabled()) {
+        if (!$this->isEnabled() || $this->context->isSystemContext()) {
             return;
         }
         $this->isClassGranted($entityClass, $string, true);
@@ -121,7 +122,7 @@ class AclManager
      */
     public function checkEntityIsGranted(SynergyEntityInterface $entity, string $action): void
     {
-        if (!$this->isEnabled()) {
+        if (!$this->isEnabled() || $this->context->isSystemContext()) {
             return;
         }
         $this->isEntityGranted($entity, $action, true);
@@ -132,7 +133,7 @@ class AclManager
      */
     public function isEntityGranted(SynergyEntityInterface $entity, string $action, bool $throwException = false): bool
     {
-        if (!$this->isEnabled()) {
+        if (!$this->isEnabled() || $this->context->isSystemContext()) {
             return true;
         }
         try {
@@ -157,7 +158,7 @@ class AclManager
 
     public function isClassGranted(string $entityClass, string $action, bool $throwException = false): bool
     {
-        if (!$this->isEnabled()) {
+        if (!$this->isEnabled() || $this->context->isSystemContext()) {
             return true;
         }
         $defaultGrant =

@@ -10,7 +10,7 @@ parameters:
 
     env(MERCURE_ENABLED): true
 
-    mercure.enabled: '%env(bool:MERCURE_ENABLED)%'
+    synergy.mercure.enabled: '%env(bool:MERCURE_ENABLED)%'
 
 services:
     _defaults:
@@ -33,4 +33,4 @@ services:
     Efrogg\Synergy\Mercure\Collector\ActionCollectorInterface:
         class: Efrogg\Synergy\Mercure\Collector\ActionCollector
         arguments:
-            $mercureEnabled: '%mercure.enabled%'
+            $mercureEnabled: '%synergy.mercure.enabled%'
