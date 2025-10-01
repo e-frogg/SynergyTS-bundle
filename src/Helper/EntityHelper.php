@@ -43,6 +43,7 @@ class EntityHelper
 
     /**
      * @deprecated not used for now... maybe later
+     *
      * @param array<string,mixed> $_entityDefinitions
      */
     public function setEntityDefinitions(array $_entityDefinitions): void
@@ -52,6 +53,7 @@ class EntityHelper
 
     /**
      * @deprecated not used for now... maybe later
+     *
      * @return array<class-string<array<string,mixed>>>
      */
     public function getEntityDefinitions(): array

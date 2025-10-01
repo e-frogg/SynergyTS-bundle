@@ -49,9 +49,9 @@ class CrudController extends AbstractController
 
         $entities = [];
         foreach ($this->entityHelper->getEntityClasses() as $class) {
-//            if (!is_a($class, SynergyEntityInterface::class, true)) {
-//                throw new \Exception(sprintf('Class %s is not an SynergyEntityInterface', $class));
-//            }
+            //            if (!is_a($class, SynergyEntityInterface::class, true)) {
+            //                throw new \Exception(sprintf('Class %s is not an SynergyEntityInterface', $class));
+            //            }
             $repo = $this->entityManager->getRepository($class);
             $entities = [...$entities, ...$repo->findAll()];
         }

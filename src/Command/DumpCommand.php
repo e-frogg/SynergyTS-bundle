@@ -46,7 +46,6 @@ class DumpCommand extends Command
         //        $criteria->getAssociation("dailies")
         //                 ->setLimit(10);
 
-
         $result = $this->entityRepositoryHelper->search(Project::class, $criteria);
 
         foreach ($result->getEntities() as $synergyEntity) {

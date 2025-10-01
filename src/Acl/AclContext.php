@@ -6,7 +6,6 @@ namespace Efrogg\Synergy\Acl;
 
 class AclContext
 {
-
     private bool $systemContext = true;
 
     public function setSystemContext(bool $systemContext): void
@@ -18,5 +17,4 @@ class AclContext
     {
         return $this->systemContext;
     }
-
 }
