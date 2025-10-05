@@ -14,7 +14,7 @@ readonly class SearchResult
      */
     public function __construct(
         private array $entities,
-        private array $mainIds = []
+        private array $mainIds = [],
     ) {
     }
 
