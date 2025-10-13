@@ -12,6 +12,7 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
 use Symfony\Component\PropertyInfo\Type;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
+use Symfony\Component\TypeInfo\Type\ObjectType;
 
 class SynergyEnricher
 {
@@ -61,32 +62,22 @@ class SynergyEnricher
                 } else {
                     $realKey = substr($property, 0, -2);
                     $setter = 'set'.ucfirst($realKey);
-                    $types = $this->propertyTypeExtractor->getTypes($entityClass, $realKey) ?? [];
-                    foreach ($types as $type) {
+                    $type = $this->propertyTypeExtractor->getType($entityClass, $realKey) ?? [];
+                    if ($type instanceof ObjectType) {
                         $className = $type->getClassName();
-                        if (null === $className) {
-                            continue;
-                        }
                         if (is_a($className, SynergyEntityInterface::class, true)) {
                             // on a une relation
                             $value = $this->entityManager
                                 ->getRepository($className)
                                 ->find($value);
-                            // on a trouvé
-                            break;
                         }
                     }
                 }
             } else {
                 /** @var Type[] $types */
-                $types = $this->propertyTypeExtractor->getTypes($entityClass, $property) ?? [];
-
-                foreach ($types as $type) {
-                    $builtInType = $type->getBuiltinType();
-                    $className = $type->getClassName();
-                    if ('object' === $builtInType) {
-                        $value = $this->convertObjectValue($className, $value);
-                    }
+                $type = $this->propertyTypeExtractor->getType($entityClass, $property) ?? [];
+                if ($type instanceof ObjectType) {
+                    $value = $this->convertObjectValue($className, $value);
                 }
             }
 

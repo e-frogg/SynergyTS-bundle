@@ -67,7 +67,7 @@ class EntityHelper
     #[Required]
     public function setEntities(
         #[AutowireIterator('synergy.entity')]
-        iterable $entities
+        iterable $entities,
     ): void {
         foreach ($entities as $entity) {
             $this->entityClasses[$entity::getEntityName()] = $entity::class;
@@ -80,13 +80,15 @@ class EntityHelper
     #[Required]
     public function setEntityRepositories(
         #[AutowireIterator('synergy.entity-repository')]
-        iterable $repositories
+        iterable $repositories,
     ): void {
         foreach ($repositories as $repository) {
             if (!$repository instanceof ServiceEntityRepository) {
                 throw new \InvalidArgumentException('Entity repository must extend ServiceEntityRepository');
             }
-            $this->entityClasses[$repository->getSynergyEntityName()] = $repository->getClassName();
+            /** @var class-string<SynergyEntityInterface> $className */
+            $className = $repository->getClassName();
+            $this->entityClasses[$repository->getSynergyEntityName()] = $className;
         }
     }
 
