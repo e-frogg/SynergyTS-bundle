@@ -9,6 +9,7 @@ use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 
@@ -55,12 +56,19 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
         'lazyProperties',
     ];
 
+    /**
+     * this cache is useless in production (PropertyInfoCacheExtractor), but so helpful in dev.
+     *
+     * @var array<string,Type|null>
+     */
+    private array $typeCache;
+
     public function __construct(
         protected ClassMetadataFactoryInterface $classMetadataFactory,
         protected PropertyTypeExtractorInterface $propertyTypeExtractor,
         protected PropertyAccessorInterface $propertyAccessor,
     ) {
-        //        $this->propertyAccessor ??= PropertyAccess::createPropertyAccessor();
+        $this->typeCache = [];
     }
 
     public function setAutoDiscover(int $autoDiscover): void
@@ -76,6 +84,8 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
      */
     public function normalize($object, ?string $format = null, array $context = []): array
     {
+        //        return (array)$object;
+
         $meta = $this->classMetadataFactory->getMetadataFor($object);
         $result = [];
         foreach ($meta->getAttributesMetadata() as $attributeMetadata) {
@@ -95,7 +105,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             }
             $key = $attributeName;
             $value = $attributeValue;
-            $type = $this->propertyTypeExtractor->getType($object::class, $key);
+            $type = $this->getType($object::class, $key);
             if (null === $type) {
                 continue;
             }
@@ -215,5 +225,11 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
     //        // et si ça suffit pas, on peut piocher dans getCollectionValueTypes
     //        // et vérifier si on a une relation ?
     //        //        $collectionType = $type->getCollectionValueTypes();
-    //    }
+    //    }/**
+    protected function getType(string $objectClass, string $key): ?Type
+    {
+        $cacheKey = $objectClass.'::'.$key;
+
+        return $this->typeCache[$cacheKey] ??= $this->propertyTypeExtractor->getType($objectClass, $key);
+    }
 }

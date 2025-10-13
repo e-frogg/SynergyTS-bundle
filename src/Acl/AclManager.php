@@ -67,7 +67,7 @@ class AclManager
     }
 
     /**
-     * @param array<class-string<SynergyEntityInterface>,array<string,bool>> $defaultEntityGrants
+     * @param array<class-string<SynergyEntityInterface>|string,array<string,bool>> $defaultEntityGrants
      */
     public function setDefaultEntityGrants(array $defaultEntityGrants): void
     {
