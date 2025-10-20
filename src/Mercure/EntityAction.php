@@ -49,6 +49,16 @@ abstract class EntityAction implements \Countable
     }
 
     /**
+     * @param array<SynergyEntityInterface> $entity
+     */
+    public function addEntity(...$entity): void
+    {
+        foreach ($entity as $e) {
+            $this->entities[] = $e;
+        }
+    }
+
+    /**
      * @return array<string,mixed>
      */
     public static function getAdditionalParameters(): array
