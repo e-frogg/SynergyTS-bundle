@@ -49,7 +49,7 @@ abstract class EntityAction implements \Countable
     }
 
     /**
-     * @param array<SynergyEntityInterface> $entity
+     * @param SynergyEntityInterface $entity
      */
     public function addEntity(...$entity): void
     {
