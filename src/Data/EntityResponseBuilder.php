@@ -68,15 +68,15 @@ class EntityResponseBuilder
     /**
      * @param array<SynergyEntityInterface> $entities
      *
-     * @return array
+     * @return array<string,array<int|string>>
      */
-    private function computeMainIds(array $entities)
+    private function computeMainIds(array $entities): array
     {
         $mainIds = [];
         foreach ($entities as $entity) {
             $mainIds[$entity::getEntityName()][] = $entity->getId();
         }
 
-        return $mainIds;
+        return array_map(array_filter(...), $mainIds);
     }
 }

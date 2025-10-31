@@ -21,16 +21,16 @@ class Criteria
         private ?int $limit = null,
         private ?int $offset = null,
         private array $associations = [],
-        private ?QueryBuilder $queryBuilder = null
+        private ?QueryBuilder $queryBuilder = null,
     ) {
     }
 
     /**
      * @param array<string,mixed> $simpleFilters
      */
-    public static function create(array $simpleFilters): static
+    public static function create(array $simpleFilters): self
     {
-        $criteria = new static();
+        $criteria = new self();
         $criteria->filters = $simpleFilters;
 
         return $criteria;

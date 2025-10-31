@@ -37,6 +37,7 @@ class EntityMercureListener
     {
         $entity = $event->getObject();
         if ($entity instanceof SynergyEntityInterface) {
+            /** @phpstan-ignore-next-line */
             $this->entityChangesetHolder->setChangeset($entity, $event->getEntityChangeSet());
         }
     }

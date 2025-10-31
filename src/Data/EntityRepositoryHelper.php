@@ -2,7 +2,6 @@
 
 namespace Efrogg\Synergy\Data;
 
-use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ManyToMany;
 use Doctrine\ORM\Mapping\ManyToOne;
@@ -31,7 +30,7 @@ class EntityRepositoryHelper
     /**
      * Finds entities by a set of criteria.
      *
-     * @psalm-param class-string<SynergyEntityInterface> $entityClass
+     * @param class-string<SynergyEntityInterface> $entityClass
      *
      * @throws \ReflectionException
      * @throws GrantException

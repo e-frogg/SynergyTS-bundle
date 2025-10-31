@@ -10,7 +10,6 @@ use Efrogg\Synergy\Mapping\WriteProtected;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
-use Symfony\Component\PropertyInfo\Type;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 
@@ -62,7 +61,7 @@ class SynergyEnricher
                 } else {
                     $realKey = substr($property, 0, -2);
                     $setter = 'set'.ucfirst($realKey);
-                    $type = $this->propertyTypeExtractor->getType($entityClass, $realKey) ?? [];
+                    $type = $this->propertyTypeExtractor->getType($entityClass, $realKey);
                     if ($type instanceof ObjectType) {
                         $className = $type->getClassName();
                         if (is_a($className, SynergyEntityInterface::class, true)) {
@@ -74,9 +73,9 @@ class SynergyEnricher
                     }
                 }
             } else {
-                /** @var Type[] $types */
-                $type = $this->propertyTypeExtractor->getType($entityClass, $property) ?? [];
+                $type = $this->propertyTypeExtractor->getType($entityClass, $property);
                 if ($type instanceof ObjectType) {
+                    $className = $type->getClassName();
                     $value = $this->convertObjectValue($className, $value);
                 }
             }

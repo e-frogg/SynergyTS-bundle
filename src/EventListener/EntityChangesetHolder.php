@@ -9,12 +9,12 @@ use Efrogg\Synergy\Entity\SynergyEntityInterface;
 class EntityChangesetHolder
 {
     /**
-     * @var array<int,array<string, array<string,mixed>>>
+     * @var array<int,array<string, array<int,mixed>>>
      */
     private array $changesets = [];
 
     /**
-     * @return array<array<string, array<string,mixed>>>
+     * @return array<array<string, array<int,mixed>>>
      */
     public function getChangesets(): array
     {
@@ -22,7 +22,7 @@ class EntityChangesetHolder
     }
 
     /**
-     * @param array<string, array<string,mixed>> $changeset
+     * @param array<string, array<int,mixed>> $changeset
      */
     public function setChangeset(SynergyEntityInterface $entity, array $changeset): void
     {

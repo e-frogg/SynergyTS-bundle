@@ -21,7 +21,7 @@ class EntityCollectionNormalizer
 
     public function __construct(
         private readonly NormalizerInterface $normalizer,
-        private readonly EntityNormalizer $genericEntityNormalizer
+        private readonly EntityNormalizer $genericEntityNormalizer,
     ) {
     }
 
@@ -36,7 +36,6 @@ class EntityCollectionNormalizer
     {
         $autoDiscoverLevels ??= self::$defaultAutoDiscoverLevels;
         $this->resetNormalizedIndex();
-        /** @var array<string, array<string,array<array<string,mixed>>>> $data */
         $data = [];
         $this->_normalizeLevel($entities, $data, $autoDiscoverLevels);
 
@@ -44,8 +43,11 @@ class EntityCollectionNormalizer
     }
 
     /**
-     * @param iterable<SynergyEntityInterface>                        $entities
-     * @param array<string, array<string,array<array<string,mixed>>>> $data
+     * @param iterable<SynergyEntityInterface> $entities
+     * @param array<string, array{
+     *     entityName:string,
+     *     entities: array<array<string,mixed>>
+     * }> $data
      *
      * @throws ExceptionInterface
      */

@@ -19,10 +19,9 @@ class EntityHelper
     private array $entityClasses = [];
 
     /**
-     * @var array<string<array<string,mixed>>>
+     * @var array<string,mixed>
      */
     #[Ignore]
-    #[\Symfony\Component\Serializer\Annotation\Ignore]
     private array $_entityDefinitions = [];
     /**
      * @var array<string, string>
@@ -54,7 +53,7 @@ class EntityHelper
     /**
      * @deprecated not used for now... maybe later
      *
-     * @return array<class-string<array<string,mixed>>>
+     * @return array<string,mixed>
      */
     public function getEntityDefinitions(): array
     {

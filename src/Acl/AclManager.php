@@ -74,7 +74,8 @@ class AclManager
         foreach ($defaultEntityGrants as $entityClass => $grants) {
             if (!is_a($entityClass, SynergyEntityInterface::class, true)) {
                 // try to find
-                $entityClass = $this->entityHelper->findEntityClass($entityClass);
+                $entityClass = $this->entityHelper->findEntityClass($entityClass)
+                 ?? throw new \InvalidArgumentException(sprintf('Invalid entity class. %s must implement %s', $entityClass, SynergyEntityInterface::class));
             }
             $this->setEntityGrants($entityClass, $grants);
         }

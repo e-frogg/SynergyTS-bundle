@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Efrogg\Synergy\Mercure\Counter;
 
 use Efrogg\Synergy\Mercure\EntityAction;
@@ -68,12 +70,9 @@ class TimeBasedActionCounter implements ActionCounterInterface
         }
     }
 
-    /**
-     * @return float
-     */
     private function nowInMS(): int
     {
-        return round(microtime(true) * 1000);
+        return (int) (microtime(true) * 1000);
     }
 
     private function isExpired(int $firstAddTime): bool
