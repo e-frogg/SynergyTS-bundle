@@ -2,6 +2,9 @@
 
 namespace Efrogg\Synergy\Serializer\Normalizer;
 
+use App\Entity\SyncConfiguration;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
@@ -77,16 +80,16 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
     }
 
     /**
-     * @param SynergyEntityInterface $object
+     * @param SynergyEntityInterface $data
      * @param array<mixed>           $context
      *
      * @return array<mixed>
      */
-    public function normalize($object, ?string $format = null, array $context = []): array
+    public function normalize($data, ?string $format = null, array $context = []): array
     {
-        //        return (array)$object;
+        //        return (array)$data;
 
-        $meta = $this->classMetadataFactory->getMetadataFor($object);
+        $meta = $this->classMetadataFactory->getMetadataFor($data);
         $result = [];
         foreach ($meta->getAttributesMetadata() as $attributeMetadata) {
             //                echo("<br>attribute ".$attributeMetadata->getName().' : '.($attributeMetadata->isIgnored() ? 'ignored' : 'not ignored' ));
@@ -99,15 +102,29 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             }
 
             try {
-                $attributeValue = $this->propertyAccessor->getValue($object, $attributeName);
+                $attributeValue = $this->propertyAccessor->getValue($data, $attributeName); //TODO : C'est ici des données sautent
             } catch (\Exception $e) {
                 continue;
             }
             $key = $attributeName;
             $value = $attributeValue;
-            $type = $this->getType($object::class, $key);
+            $type = $this->getType($data::class, $key);
             if (null === $type) {
                 continue;
+            }
+
+            // nullable types embeds real types...
+            if($type instanceof Type\NullableType) {
+                foreach ($type->getTypes() as $innerType) {
+                    if($innerType instanceof ObjectType) {
+                        // substitute with inner type
+                        $type = $innerType;
+                        break; // beacause only one non null type is expected
+                    }
+                }
+            } elseif($type instanceof Type\UnionType) {
+                // to be handled when needed
+                throw new \LogicException('Union type not supported for now in EntityNormalizer for '.$data::class.'::'.$attributeName);
             }
 
             if ($type instanceof CollectionType) {
@@ -129,6 +146,9 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
                     } else {
                         throw new \InvalidArgumentException('Collection expected');
                     }
+                } elseif($this->isOneToMany($value)) {
+                    // OneToMany is rebuilt in Synergy front
+                    continue;
                 }
             } elseif ($attributeValue instanceof \DateTimeInterface) {
                 $value = $attributeValue->format('Y-m-d H:i:s');
@@ -205,13 +225,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             return true;
         }
 
-        foreach (self::SKIPPED_ATTRIBUTE_PREFIX as $prefix) {
-            if (str_starts_with($attributeName, $prefix)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(self::SKIPPED_ATTRIBUTE_PREFIX, static fn($prefix) => str_starts_with($attributeName, $prefix));
     }
 
     //    public static function isRelationCollection(CollectionType $type): bool
@@ -231,5 +245,10 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
         $cacheKey = $objectClass.'::'.$key;
 
         return $this->typeCache[$cacheKey] ??= $this->propertyTypeExtractor->getType($objectClass, $key);
+    }
+
+    private function isOneToMany(mixed $value): bool
+    {
+        return $value instanceof Collection;
     }
 }
