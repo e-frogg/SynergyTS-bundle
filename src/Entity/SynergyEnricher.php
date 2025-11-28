@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
+use Symfony\Component\TypeInfo\Type\NullableType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 
 class SynergyEnricher
@@ -62,6 +63,16 @@ class SynergyEnricher
                     $realKey = substr($property, 0, -2);
                     $setter = 'set'.ucfirst($realKey);
                     $type = $this->propertyTypeExtractor->getType($entityClass, $realKey);
+
+                    if($type instanceof NullableType) {
+                        foreach ($type->getTypes() as $innerType) {
+                            if($innerType instanceof ObjectType) {
+                                $type = $innerType;
+                                break;
+                            }
+                        }
+                    }
+
                     if ($type instanceof ObjectType) {
                         $className = $type->getClassName();
                         if (is_a($className, SynergyEntityInterface::class, true)) {
