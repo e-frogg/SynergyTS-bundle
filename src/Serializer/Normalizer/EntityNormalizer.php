@@ -2,8 +2,6 @@
 
 namespace Efrogg\Synergy\Serializer\Normalizer;
 
-use App\Entity\SyncConfiguration;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
@@ -102,7 +100,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             }
 
             try {
-                $attributeValue = $this->propertyAccessor->getValue($data, $attributeName); //TODO : C'est ici des données sautent
+                $attributeValue = $this->propertyAccessor->getValue($data, $attributeName); // TODO : C'est ici des données sautent
             } catch (\Exception $e) {
                 continue;
             }
@@ -114,15 +112,15 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             }
 
             // nullable types embeds real types...
-            if($type instanceof Type\NullableType) {
+            if ($type instanceof Type\NullableType) {
                 foreach ($type->getTypes() as $innerType) {
-                    if($innerType instanceof ObjectType) {
+                    if ($innerType instanceof ObjectType) {
                         // substitute with inner type
                         $type = $innerType;
                         break; // beacause only one non null type is expected
                     }
                 }
-            } elseif($type instanceof Type\UnionType) {
+            } elseif ($type instanceof Type\UnionType) {
                 // to be handled when needed
                 throw new \LogicException('Union type not supported for now in EntityNormalizer for '.$data::class.'::'.$attributeName);
             }
@@ -146,7 +144,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
                     } else {
                         throw new \InvalidArgumentException('Collection expected');
                     }
-                } elseif($this->isOneToMany($value)) {
+                } elseif ($this->isOneToMany($value)) {
                     // OneToMany is rebuilt in Synergy front
                     continue;
                 }
@@ -225,7 +223,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             return true;
         }
 
-        return array_any(self::SKIPPED_ATTRIBUTE_PREFIX, static fn($prefix) => str_starts_with($attributeName, $prefix));
+        return array_any(self::SKIPPED_ATTRIBUTE_PREFIX, static fn ($prefix) => str_starts_with($attributeName, $prefix));
     }
 
     //    public static function isRelationCollection(CollectionType $type): bool

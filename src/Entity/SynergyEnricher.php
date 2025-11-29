@@ -64,9 +64,9 @@ class SynergyEnricher
                     $setter = 'set'.ucfirst($realKey);
                     $type = $this->propertyTypeExtractor->getType($entityClass, $realKey);
 
-                    if($type instanceof NullableType) {
+                    if ($type instanceof NullableType) {
                         foreach ($type->getTypes() as $innerType) {
-                            if($innerType instanceof ObjectType) {
+                            if ($innerType instanceof ObjectType) {
                                 $type = $innerType;
                                 break;
                             }
