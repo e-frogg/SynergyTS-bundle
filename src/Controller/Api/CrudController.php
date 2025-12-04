@@ -6,6 +6,7 @@ namespace Efrogg\Synergy\Controller\Api;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Efrogg\Synergy\Acl\AclManager;
 use Efrogg\Synergy\Context;
 use Efrogg\Synergy\Controller\Trait\JsonRequestTrait;
 use Efrogg\Synergy\Data\CriteriaParser;
@@ -35,7 +36,8 @@ class CrudController extends AbstractController
         private readonly SynergyEnricher $SynergyEnricher,
         private readonly EntityRepositoryHelper $entityRepositoryHelper,
         private readonly CriteriaParser $criteriaParser,
-        private readonly EntityResponseBuilder $entityResponseBuilder
+        private readonly EntityResponseBuilder $entityResponseBuilder,
+        private readonly AclManager $aclManager
     ) {
     }
 
@@ -45,6 +47,7 @@ class CrudController extends AbstractController
     #[Route('/full', name: 'Synergy_full', priority: 2)]
     public function full(Request $request): Response
     {
+        $this->aclManager->setEnabled(true);
         $this->configureDiscover($request);
 
         $entities = [];
@@ -68,6 +71,7 @@ class CrudController extends AbstractController
     #[Route('/{entityName}/{id}', name: 'Synergy__entity_get', methods: ['GET'], priority: 2)]
     public function getOne(Request $request, string $id, string $entityName): JsonResponse
     {
+        $this->aclManager->setEnabled(true);
         $this->configureDiscover($request);
         $repo = $this->getEntityRepository($entityName);
         $entity = $repo->find($id);
@@ -84,6 +88,8 @@ class CrudController extends AbstractController
     #[Route('/{entityName}', name: 'Synergy__entity_get_all', methods: ['GET'], priority: 2)]
     public function getAll(Request $request, string $entityName): JsonResponse
     {
+        $this->aclManager->setEnabled(true);
+
         $this->configureDiscover($request);
         $repo = $this->getEntityRepository($entityName);
         $entities = $repo->findAll();
@@ -94,6 +100,8 @@ class CrudController extends AbstractController
     #[Route('/search/{entityName}', name: 'Synergy__entity_search', methods: ['POST'], priority: 2)]
     public function search(Request $request, string $entityName): JsonResponse
     {
+        $this->aclManager->setEnabled(true);
+
         $this->configureDiscover($request);
         $entityClass = $this->entityHelper->findEntityClass($entityName)
             ?? throw new NotFoundHttpException(sprintf('Entity [%s] not found', $entityName));
@@ -113,6 +121,8 @@ class CrudController extends AbstractController
     #[Route('/{entityName}', name: 'Synergy__entity_create', methods: ['POST'], priority: 2)]
     public function create(Request $request, string $entityName): JsonResponse
     {
+        $this->aclManager->setEnabled(true);
+
         $entityClass = $this->entityHelper->findEntityClass($entityName)
             ?? throw new NotFoundHttpException(sprintf('Entity [%s] not found', $entityName));
 
@@ -126,6 +136,8 @@ class CrudController extends AbstractController
     #[Route('/{entityName}/{id}', name: 'Synergy__entity_edit', methods: ['PUT'], priority: 2)]
     public function edit(Request $request, string $entityName, string $id): JsonResponse
     {
+        $this->aclManager->setEnabled(true);
+
         $entityClass = $this->entityHelper->findEntityClass($entityName)
             ?? throw new NotFoundHttpException(sprintf('Entity [%s] not found', $entityName));
 
@@ -147,6 +159,8 @@ class CrudController extends AbstractController
      */
     private function createOrEdit(Request $request, string $entityClass, string $action, ?SynergyEntityInterface $entity = null): JsonResponse
     {
+        $this->aclManager->setEnabled(true);
+
         $body = $this->extractJson($request);
 
         if ('edit' === $action && $body->has('id') && (string) $body->get('id') !== (string) $entity?->getId()) {
@@ -169,6 +183,8 @@ class CrudController extends AbstractController
     #[Route('/{entityName}/{id}', name: 'Synergy__entity_delete', methods: ['DELETE'], priority: 2)]
     public function delete(string $entityName, string $id): JsonResponse
     {
+        $this->aclManager->setEnabled(true);
+
         $entityRepository = $this->getEntityRepository($entityName);
 
         $entity = $entityRepository->find($id);

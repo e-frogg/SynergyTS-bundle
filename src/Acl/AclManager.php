@@ -43,7 +43,7 @@ class AclManager
     ) {
     }
 
-    private bool $enabled = true;
+    private bool $enabled = false;
 
     public function setDefaultGrant(bool $defaultGrant): void
     {
