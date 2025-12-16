@@ -36,6 +36,6 @@ class BufferedHub implements HubInterface
 
     public function publish(Update $update): string
     {
-        dd($update);
+        return $this->hub->publish($update);
     }
 }
