@@ -111,7 +111,7 @@ class CrudController extends AbstractController
 
         $result = $this->entityRepositoryHelper->search($entityClass, $criteria);
 
-        return $this->entityResponseBuilder->buildResponse($result->getEntities(), mainIds: $result->getMainIds());
+        return $this->entityResponseBuilder->buildResponseFromSearchResult($result);
     }
 
     /**

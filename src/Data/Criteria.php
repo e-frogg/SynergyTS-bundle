@@ -22,6 +22,7 @@ class Criteria
         private ?int $offset = null,
         private array $associations = [],
         private ?QueryBuilder $queryBuilder = null,
+        private bool $totalCountNeeded = false,
     ) {
     }
 
@@ -136,6 +137,18 @@ class Criteria
     public function setOffset(?int $offset): static
     {
         $this->offset = $offset;
+
+        return $this;
+    }
+
+    public function isTotalCountNeeded(): bool
+    {
+        return $this->totalCountNeeded;
+    }
+
+    public function setTotalCountNeeded(bool $totalCountNeeded): static
+    {
+        $this->totalCountNeeded = $totalCountNeeded;
 
         return $this;
     }

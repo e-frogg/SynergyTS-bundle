@@ -41,13 +41,29 @@ class EntityRepositoryHelper
         $this->aclManager->checkClassIsGranted($entityClass, AclManager::READ);
         $lastMainIds = [];
 
+        /** @phpstan-ignore-next-line  */
         if (!is_a($entityClass, SynergyEntityInterface::class, true)) {
             throw new \LogicException(__CLASS__.' : only SynergyEntityInterface can be searched');
         }
 
         $queryBuilder = $this->createQueryBuilder($entityClass, $criteria);
+
+        // if totalCountMode => return count
+        $totalCount = null;
+        //        if ($criteria->isTotalCountMode()) {
+
         if ($queryBuilder instanceof QueryBuilder) {
             $mainResult = $queryBuilder->getQuery()->getResult();
+
+            if ($criteria->isTotalCountNeeded()) {
+                $countQb = clone $queryBuilder;
+                $countQb
+                    ->setMaxResults(null)
+                    ->setFirstResult(null)
+                    ->select('COUNT(1)');
+
+                $totalCount = (int) $countQb->getQuery()->getSingleScalarResult();
+            }
         } else {
             $filters = $criteria->getFilters();
             $mainResult = $this->entityManager->getRepository($entityClass)->findBy(
@@ -149,7 +165,7 @@ class EntityRepositoryHelper
                 throw new \RuntimeException(sprintf('association %s is not a Synergy entity', $targetEntityClass));
             }
 
-            if (null !== $associationCriteria->getLimit() && is_iterable($filterValue)) {
+            if (null !== $associationCriteria->getLimit()) {
                 // fetching association with limit for each item
                 // bad performances, but it's the only way to do it easily
                 foreach ($filterValue as $itemValue) {
@@ -162,55 +178,91 @@ class EntityRepositoryHelper
             }
         }
 
-        return new SearchResult(array_merge(...$results), $lastMainIds);
+        return new SearchResult(array_merge(...$results), $lastMainIds, $totalCount);
     }
 
     /**
      * @param class-string<SynergyEntityInterface> $entityClass
-     *
-     * @deprecated : sujet a approfondir éventuellement
      */
     protected function createQueryBuilder(string $entityClass, Criteria $criteria): ?QueryBuilder
     {
-        // Criteria already has a query builder
-        $qb = $criteria->getQueryBuilder();
-        if (null === $qb) {
-            // pour le moment, on ne sait pas crée un query builder à partir de Filters
-            return null;
-        }
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('c')
+            ->from($entityClass, 'c');
 
-        // un essai, à approfondir, pour le moment on ne l'utilise pas
-        //        $qb = $this->entitymanager->getrepository($entityclass)->createquerybuilder('m');
-        //
-        //        $qb->select('m');
-        //        $qb->join(user::class, 'u');
-        //        // filters
-        //        $and = $qb->expr()->andx();
-        //        foreach ($criteria->getfilters() as $key => $value) {
-        //            if (is_array($value)) {
-        //                $and->add($qb->expr()->in($key, $value));
-        //            } else {
-        //                $and->add($qb->expr()->eq($key, $value));
-        //            }
-        //        }
-        //        $qb->where($and);
+        $this->enrichQueryBuilderFilters($qb, $criteria->getFilters(), 'c');
 
-        $rootAlias = $qb->getRootAliases()[0] ?? '';
-        // orderBy
-        foreach ($criteria->getOrderBy() ?? [] as $sortKey => $sortDirection) {
-            // add alias if needed
-            // nope ! on ne sait pas si c'est un alias ou pas
-            //            if(!str_contains($sortKey, '.') && $rootAlias !== '') {
-            //                $sortKey = $rootAlias.'.' . $sortKey;
-            //            }
-            $qb->orderBy(new OrderBy($sortKey, $sortDirection));
-        }
+        $this->enrichQueryBuilderOrder($qb, $criteria);
 
         // limit
         $qb->setMaxResults($criteria->getLimit());
         $qb->setFirstResult($criteria->getOffset());
 
-        //        dd($qb->getQuery()->getSQL());
+        //                dd($qb->getQuery()->getSQL());
         return $qb;
+    }
+
+    /**
+     * @param mixed[] $filters
+     */
+    private function enrichQueryBuilderFilters(
+        QueryBuilder $qb,
+        array $filters,
+        string $rootAlias = 'c',
+    ): void {
+        $joins = [];
+
+        foreach ($filters as $key => $value) {
+            // nested : relation.field
+            if (str_contains($key, '.')) {
+                [$relation, $field] = explode('.', $key, 2);
+
+                // alias unique par relation
+                if (!isset($joins[$relation])) {
+                    $alias = $relation[0]; // t pour type, p pour project, etc.
+                    $joins[$relation] = $alias;
+
+                    $qb->join(sprintf('%s.%s', $rootAlias, $relation), $alias);
+                } else {
+                    $alias = $joins[$relation];
+                }
+
+                $param = str_replace('.', '_', $key);
+
+                if (is_array($value)) {
+                    $qb->andWhere(sprintf('%s.%s IN (:%s)', $alias, $field, $param));
+                } else {
+                    $qb->andWhere(sprintf('%s.%s = :%s', $alias, $field, $param));
+                }
+
+                $qb->setParameter($param, $value);
+            }
+
+            // champ simple
+            else {
+                $param = $key;
+
+                if (is_array($value)) {
+                    $qb->andWhere(sprintf('%s.%s IN (:%s)', $rootAlias, $key, $param));
+                } else {
+                    $qb->andWhere(sprintf('%s.%s = :%s', $rootAlias, $key, $param));
+                }
+
+                $qb->setParameter($param, $value);
+            }
+        }
+    }
+
+    protected function enrichQueryBuilderOrder(QueryBuilder $qb, Criteria $criteria): void
+    {
+        $rootAlias = $qb->getRootAliases()[0] ?? '';
+        // orderBy
+        foreach ($criteria->getOrderBy() ?? [] as $sortKey => $sortDirection) {
+            // add alias if needed
+            if (str_starts_with($sortKey, $rootAlias.'.')) {
+                $sortKey = substr($sortKey, strlen($rootAlias) + 1);
+            }
+            $qb->orderBy($rootAlias.'.'.$sortKey, $sortDirection);
+        }
     }
 }

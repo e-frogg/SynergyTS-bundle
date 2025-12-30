@@ -35,7 +35,7 @@ class EntityResponseBuilder
      *
      * @throws ExceptionInterface
      */
-    public function buildResponse(array $entities, ?array $mainIds = null, string|array|null $mercureTopics = null): JsonResponse
+    public function buildResponse(array $entities, ?array $mainIds = null, string|array|null $mercureTopics = null, ?int $totalCount = null): JsonResponse
     {
         $data = [
             'data' => $this->entityCollectionNormalizer->normalize($entities, $this->discoverLevel),
@@ -45,6 +45,9 @@ class EntityResponseBuilder
         }
         if (null !== $mainIds) {
             $data['mainIds'] = $mainIds;
+        }
+        if (null !== $totalCount) {
+            $data['totalCount'] = $totalCount;
         }
 
         return new JsonResponse($data);
@@ -56,12 +59,13 @@ class EntityResponseBuilder
      *
      * @throws ExceptionInterface
      */
-    public function buildResponseFromCollection(array $entities, string|array|null $mercureTopics = null): JsonResponse
+    public function buildResponseFromCollection(array $entities, string|array|null $mercureTopics = null, ?int $totalCount = null): JsonResponse
     {
         return $this->buildResponse(
             $entities,
             $this->computeMainIds($entities),
-            $mercureTopics
+            $mercureTopics,
+            $totalCount
         );
     }
 
@@ -78,5 +82,20 @@ class EntityResponseBuilder
         }
 
         return array_map(array_filter(...), $mainIds);
+    }
+
+    /**
+     * @param string|array<string>|null $mercureTopics
+     *
+     * @throws ExceptionInterface
+     */
+    public function buildResponseFromSearchResult(SearchResult $result, string|array|null $mercureTopics = null): JsonResponse
+    {
+        return $this->buildResponse(
+            $result->getEntities(),
+            $result->getMainIds(),
+            $mercureTopics,
+            $result->getTotalCount()
+        );
     }
 }
