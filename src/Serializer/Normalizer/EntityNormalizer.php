@@ -4,6 +4,7 @@ namespace Efrogg\Synergy\Serializer\Normalizer;
 
 use Doctrine\Common\Collections\Collection;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
+use Efrogg\Synergy\Helper\TypeHelper;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
@@ -112,18 +113,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             }
 
             // nullable types embeds real types...
-            if ($type instanceof Type\NullableType) {
-                foreach ($type->getTypes() as $innerType) {
-                    if ($innerType instanceof ObjectType) {
-                        // substitute with inner type
-                        $type = $innerType;
-                        break; // beacause only one non null type is expected
-                    }
-                }
-            } elseif ($type instanceof Type\UnionType) {
-                // to be handled when needed
-                throw new \LogicException('Union type not supported for now in EntityNormalizer for '.$data::class.'::'.$attributeName);
-            }
+            $type = TypeHelper::getInnerType($type);
 
             if ($type instanceof CollectionType) {
                 //                if (self::isRelationCollection($type)) {

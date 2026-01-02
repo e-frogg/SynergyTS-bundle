@@ -6,12 +6,12 @@ namespace Efrogg\Synergy\Entity;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Efrogg\Synergy\Exception\SerializerException;
+use Efrogg\Synergy\Helper\TypeHelper;
 use Efrogg\Synergy\Mapping\WriteProtected;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
-use Symfony\Component\TypeInfo\Type\NullableType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 
 class SynergyEnricher
@@ -64,22 +64,17 @@ class SynergyEnricher
                     $setter = 'set'.ucfirst($realKey);
                     $type = $this->propertyTypeExtractor->getType($entityClass, $realKey);
 
-                    if ($type instanceof NullableType) {
-                        foreach ($type->getTypes() as $innerType) {
-                            if ($innerType instanceof ObjectType) {
-                                $type = $innerType;
-                                break;
-                            }
-                        }
-                    }
+                    if (null !== $type) {
+                        $type = TypeHelper::getInnerType($type);
 
-                    if ($type instanceof ObjectType) {
-                        $className = $type->getClassName();
-                        if (is_a($className, SynergyEntityInterface::class, true)) {
-                            // on a une relation
-                            $value = $this->entityManager
-                                ->getRepository($className)
-                                ->find($value);
+                        if ($type instanceof ObjectType) {
+                            $className = $type->getClassName();
+                            if (is_a($className, SynergyEntityInterface::class, true)) {
+                                // on a une relation
+                                $value = $this->entityManager
+                                    ->getRepository($className)
+                                    ->find($value);
+                            }
                         }
                     }
                 }
