@@ -2,17 +2,18 @@
 
 namespace Efrogg\Synergy\Serializer\Normalizer;
 
-use DateTimeInterface;
 use Doctrine\Common\Collections\Collection;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
-use Exception;
+use Efrogg\Synergy\Helper\TypeHelper;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
-use Symfony\Component\PropertyInfo\Type;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\CollectionType;
+use Symfony\Component\TypeInfo\Type\ObjectType;
 
 class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
 {
@@ -20,12 +21,12 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
 
     public const int DISCOVER_NONE = 0;
     /**
-     * discover oneToMany (ex : vehicle -> vehicleModel)
+     * discover oneToMany (ex : vehicle -> vehicleModel).
      */
     public const int DISCOVER_ASCENDING = 1;
 
     /**
-     * discover manyToOne (ex : vehicleModel -> vehicles)
+     * discover manyToOne (ex : vehicleModel -> vehicles).
      */
     public const int DISCOVER_DESCENDING = 2;
 
@@ -37,9 +38,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
     private array $discoveredEntities = [];
 
     /**
-     * activate entity discovery for relations (oneToMany, manyToOne)
-     *
-     * @var int
+     * activate entity discovery for relations (oneToMany, manyToOne).
      */
     private int $autoDiscover = self::DISCOVER_NONE;
 
@@ -59,36 +58,40 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
         'lazyProperties',
     ];
 
+    /**
+     * this cache is useless in production (PropertyInfoCacheExtractor), but so helpful in dev.
+     *
+     * @var array<string,Type|null>
+     */
+    private array $typeCache;
+
     public function __construct(
         protected ClassMetadataFactoryInterface $classMetadataFactory,
         protected PropertyTypeExtractorInterface $propertyTypeExtractor,
-        protected PropertyAccessorInterface $propertyAccessor
+        protected PropertyAccessorInterface $propertyAccessor,
     ) {
-//        $this->propertyAccessor ??= PropertyAccess::createPropertyAccessor();
+        $this->typeCache = [];
     }
 
-    /**
-     * @param int $autoDiscover
-     */
     public function setAutoDiscover(int $autoDiscover): void
     {
         $this->autoDiscover = $autoDiscover;
     }
 
     /**
-     * @param SynergyEntityInterface $object
-     * @param array<mixed>         $context
+     * @param SynergyEntityInterface $data
+     * @param array<mixed>           $context
      *
      * @return array<mixed>
      */
-    public function normalize($object, string $format = null, array $context = []): array
+    public function normalize($data, ?string $format = null, array $context = []): array
     {
-//        echo("<br><br>class ".$object::class);
-        $meta = $this->classMetadataFactory->getMetadataFor($object);
-//        echo(" -> ".$meta->getName());
+        //        return (array)$data;
+
+        $meta = $this->classMetadataFactory->getMetadataFor($data);
         $result = [];
         foreach ($meta->getAttributesMetadata() as $attributeMetadata) {
-//                echo("<br>attribute ".$attributeMetadata->getName().' : '.($attributeMetadata->isIgnored() ? 'ignored' : 'not ignored' ));
+            //                echo("<br>attribute ".$attributeMetadata->getName().' : '.($attributeMetadata->isIgnored() ? 'ignored' : 'not ignored' ));
             if ($attributeMetadata->isIgnored()) {
                 continue;
             }
@@ -97,54 +100,58 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
                 continue;
             }
 
-            $types = $this->propertyTypeExtractor->getTypes($object::class, $attributeName);
-            if (null === $types) {
-                continue;
-            }
             try {
-                $attributeValue = $this->propertyAccessor->getValue($object, $attributeName);
-            } catch (Exception $e) {
+                $attributeValue = $this->propertyAccessor->getValue($data, $attributeName); // TODO : C'est ici des données sautent
+            } catch (\Exception $e) {
                 continue;
             }
             $key = $attributeName;
             $value = $attributeValue;
-            foreach ($types as $type) {
-                if ($type->isCollection()) {
-                    if (self::isRelationCollection($type)) {
-                        // one to many
-                        if ($this->acceptDiscovery(self::DISCOVER_DESCENDING)) {
-                            if (is_iterable($attributeValue)) {
-                                $collection = [];
-                                foreach ($attributeValue as $item) {
-                                    if ($item instanceof SynergyEntityInterface) {
-                                        $this->addDiscoveredEntity($item, self::DISCOVER_DESCENDING);
-                                        $collection[] = $item->getId(); // ok, does not fetch the entity lazy
-//                            } else {
-//                            $collection[] = $item; // ??
-//                                throw new \InvalidArgumentException('SynergyEntityInterface expected. '.$item::class.' given');
-                                    }
-                                }
-                                $value = $collection;
-                            } else {
-                                throw new \InvalidArgumentException('Collection expected');
+            $type = $this->getType($data::class, $key);
+            if (null === $type) {
+                continue;
+            }
+
+            // nullable types embeds real types...
+            $type = TypeHelper::getInnerType($type);
+
+            if ($type instanceof CollectionType) {
+                //                if (self::isRelationCollection($type)) {
+                // one to many
+                if ($this->acceptDiscovery(self::DISCOVER_DESCENDING)) {
+                    if (is_iterable($attributeValue)) {
+                        $collection = [];
+                        foreach ($attributeValue as $item) {
+                            if ($item instanceof SynergyEntityInterface) {
+                                $this->addDiscoveredEntity($item, self::DISCOVER_DESCENDING);
+                                $collection[] = $item->getId(); // ok, does not fetch the entity lazy
+                                //                            } else {
+                                //                            $collection[] = $item; // ??
+                                //                                throw new \InvalidArgumentException('SynergyEntityInterface expected. '.$item::class.' given');
                             }
                         }
-                    }
-                } elseif ($attributeValue instanceof DateTimeInterface) {
-                    $value = $attributeValue->format('Y-m-d H:i:s');
-                } elseif ($type->getClassName()) {
-                    if (is_a($type->getClassName(), SynergyEntityInterface::class, true)) {
-                        // many to one
-                        if ($attributeValue instanceof SynergyEntityInterface) {
-                            $this->addDiscoveredEntity($attributeValue, self::DISCOVER_ASCENDING);
-                        }
-                        $key = $attributeName . 'Id';
-                        $value = $attributeValue?->getId(); // ok, does not fetch the entity lazy
+                        $value = $collection;
                     } else {
-                        // object non Synergy => non sérialisé
-//                        echo "<br>skip ! SynergyEntityInterface expected. ".$type->getClassName()." given";
-                        continue(2);
+                        throw new \InvalidArgumentException('Collection expected');
                     }
+                } elseif ($this->isOneToMany($value)) {
+                    // OneToMany is rebuilt in Synergy front
+                    continue;
+                }
+            } elseif ($attributeValue instanceof \DateTimeInterface) {
+                $value = $attributeValue->format('Y-m-d H:i:s');
+            } elseif ($type instanceof ObjectType && $type->getClassName()) {
+                if (is_a($type->getClassName(), SynergyEntityInterface::class, true)) {
+                    // many to one
+                    if ($attributeValue instanceof SynergyEntityInterface) {
+                        $this->addDiscoveredEntity($attributeValue, self::DISCOVER_ASCENDING);
+                    }
+                    $key = $attributeName.'Id';
+                    $value = $attributeValue?->getId(); // ok, does not fetch the entity lazy
+                } else {
+                    // object non Synergy => non sérialisé
+                    //                        echo "<br>skip ! SynergyEntityInterface expected. ".$type->getClassName()." given";
+                    continue;
                 }
             }
             $result[$key] = $value;
@@ -153,7 +160,7 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
         return $result;
     }
 
-    public function supportsNormalization($data, string $format = null, array $context = []): bool
+    public function supportsNormalization($data, ?string $format = null, array $context = []): bool
     {
         return $data instanceof SynergyEntityInterface;
     }
@@ -171,8 +178,8 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             return;
         }
         $entityId = $entity->getId();
-        $uniqueKey = $entity::getEntityName() . '-' . $entityId;
-        if ($entityId !== null && !isset($this->discoveredEntities[$uniqueKey])) {
+        $uniqueKey = $entity::getEntityName().'-'.$entityId;
+        if (null !== $entityId && !isset($this->discoveredEntities[$uniqueKey])) {
             $this->discoveredEntities[$uniqueKey] = $entity;
         }
     }
@@ -192,14 +199,9 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
 
     public function hasDiscoveredEntities(): bool
     {
-        return (bool)count($this->discoveredEntities);
+        return (bool) count($this->discoveredEntities);
     }
 
-    /**
-     * @param int $discoveryMode
-     *
-     * @return bool
-     */
     private function acceptDiscovery(int $discoveryMode): bool
     {
         return ($this->autoDiscover & $discoveryMode) === $discoveryMode;
@@ -211,23 +213,30 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
             return true;
         }
 
-        foreach (self::SKIPPED_ATTRIBUTE_PREFIX as $prefix) {
-            if (str_starts_with($attributeName, $prefix)) {
-                return true;
-            }
-        }
-        return false;
+        return array_any(self::SKIPPED_ATTRIBUTE_PREFIX, static fn ($prefix) => str_starts_with($attributeName, $prefix));
     }
 
-    public static function isRelationCollection(Type $type): bool
+    //    public static function isRelationCollection(CollectionType $type): bool
+    //    {
+    //        dd($type->getCollectionValueType());
+    //        return
+    //            $type->isCollection()
+    //            && count($type->getCollectionValueTypes()) > 0
+    //            && is_a($type->getClassName(), Collection::class, true);
+    //
+    //        // et si ça suffit pas, on peut piocher dans getCollectionValueTypes
+    //        // et vérifier si on a une relation ?
+    //        //        $collectionType = $type->getCollectionValueTypes();
+    //    }/**
+    protected function getType(string $objectClass, string $key): ?Type
     {
-        return
-            $type->isCollection()
-            && count($type->getCollectionValueTypes()) > 0
-            && is_a($type->getClassName(), Collection::class, true);
+        $cacheKey = $objectClass.'::'.$key;
 
-        // et si ça suffit pas, on peut piocher dans getCollectionValueTypes
-        // et vérifier si on a une relation ?
-//        $collectionType = $type->getCollectionValueTypes();
+        return $this->typeCache[$cacheKey] ??= $this->propertyTypeExtractor->getType($objectClass, $key);
+    }
+
+    private function isOneToMany(mixed $value): bool
+    {
+        return $value instanceof Collection;
     }
 }

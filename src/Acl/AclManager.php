@@ -13,7 +13,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 
 class AclManager
 {
-
     public const string CREATE = 'create';
     public const string READ = 'read';
     public const string UPDATE = 'update';
@@ -27,7 +26,7 @@ class AclManager
      */
     private array $defaultActionGrants = [
         self::CREATE => false,
-        self::READ   => false,
+        self::READ => false,
         self::UPDATE => false,
         self::DELETE => false,
     ];
@@ -40,24 +39,17 @@ class AclManager
     public function __construct(
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly EntityHelper $entityHelper,
-    )
-    {
+        private readonly AclContext $context,
+    ) {
     }
 
-    private bool $enabled = true;
+    private bool $enabled = false;
 
-    /**
-     * @param bool $defaultGrant
-     */
     public function setDefaultGrant(bool $defaultGrant): void
     {
         $this->defaultGrant = $defaultGrant;
     }
 
-    /**
-     * @param string $action
-     * @param bool   $defaultGrant
-     */
     public function setDefaultActionGrant(string $action, bool $defaultGrant): void
     {
         $this->validateAction($action);
@@ -75,23 +67,23 @@ class AclManager
     }
 
     /**
-     * @param array<class-string<SynergyEntityInterface>,array<string,bool>> $defaultEntityGrants
+     * @param array<class-string<SynergyEntityInterface>|string,array<string,bool>> $defaultEntityGrants
      */
     public function setDefaultEntityGrants(array $defaultEntityGrants): void
     {
         foreach ($defaultEntityGrants as $entityClass => $grants) {
-            if(!is_a($entityClass,SynergyEntityInterface::class,true)) {
+            if (!is_a($entityClass, SynergyEntityInterface::class, true)) {
                 // try to find
-                $entityClass = $this->entityHelper->findEntityClass($entityClass);
+                $entityClass = $this->entityHelper->findEntityClass($entityClass)
+                 ?? throw new \InvalidArgumentException(sprintf('Invalid entity class. %s must implement %s', $entityClass, SynergyEntityInterface::class));
             }
             $this->setEntityGrants($entityClass, $grants);
         }
     }
+
     /**
      * @param class-string<SynergyEntityInterface> $entityClass
-     * @param array<string,bool>  $grants
-     *
-     * @return void
+     * @param array<string,bool>                   $grants
      */
     public function setEntityGrants(string $entityClass, array $grants): void
     {
@@ -103,20 +95,15 @@ class AclManager
 
     /**
      * @param class-string<SynergyEntityInterface> $entityClass
-     * @param string $action
-     * @param bool   $defaultGrant
-     *
-     * @return void
      */
     public function setEntityGrant(string $entityClass, string $action, bool $defaultGrant): void
     {
         $this->validateAction($action);
-        if(!is_a($entityClass,SynergyEntityInterface::class,true)) {
-            throw new \InvalidArgumentException(sprintf('Invalid entity class. %s must implement %s',$entityClass,SynergyEntityInterface::class));
+        if (!is_a($entityClass, SynergyEntityInterface::class, true)) {
+            throw new \InvalidArgumentException(sprintf('Invalid entity class. %s must implement %s', $entityClass, SynergyEntityInterface::class));
         }
         $this->defaultEntityGrants[$entityClass][$action] = $defaultGrant;
     }
-
 
     /**
      * @param class-string<SynergyEntityInterface> $entityClass
@@ -125,31 +112,29 @@ class AclManager
      */
     public function checkClassIsGranted(string $entityClass, string $string): void
     {
-        if(!$this->isEnabled()) {
+        if (!$this->isEnabled() || $this->context->isSystemContext()) {
             return;
         }
         $this->isClassGranted($entityClass, $string, true);
     }
-
 
     /**
      * @throws GrantException
      */
     public function checkEntityIsGranted(SynergyEntityInterface $entity, string $action): void
     {
-        if(!$this->isEnabled()) {
+        if (!$this->isEnabled() || $this->context->isSystemContext()) {
             return;
         }
         $this->isEntityGranted($entity, $action, true);
     }
-
 
     /**
      * @throws GrantException
      */
     public function isEntityGranted(SynergyEntityInterface $entity, string $action, bool $throwException = false): bool
     {
-        if(!$this->isEnabled()) {
+        if (!$this->isEnabled() || $this->context->isSystemContext()) {
             return true;
         }
         try {
@@ -166,16 +151,15 @@ class AclManager
         $this->eventDispatcher->dispatch($event);
 
         if ($throwException && !$event->isGranted()) {
-            throw new GrantException(sprintf('Entity-level access denied (%s %s [%s])',$action,$entity::getEntityName(),$entity->getId()), $event->getCode(), $event->getViolations());
+            throw new GrantException(sprintf('Entity-level access denied (%s %s [%s])', $action, $entity::getEntityName(), $entity->getId()), $event->getCode(), $event->getViolations());
         }
 
         return $event->isGranted();
     }
 
-
     public function isClassGranted(string $entityClass, string $action, bool $throwException = false): bool
     {
-        if(!$this->isEnabled()) {
+        if (!$this->isEnabled() || $this->context->isSystemContext()) {
             return true;
         }
         $defaultGrant =
@@ -184,8 +168,8 @@ class AclManager
             ?? $this->defaultGrant;
 
         $violations = [];
-        if(!$defaultGrant) {
-            $violations[] = sprintf('class-level access denied (%s %s)',$action,$entityClass);
+        if (!$defaultGrant) {
+            $violations[] = sprintf('class-level access denied (%s %s)', $action, $entityClass);
         }
 
         $event = new AclClassGrantEvent($entityClass, $action, $defaultGrant, $violations);
@@ -193,19 +177,13 @@ class AclManager
         // dispatch event
         $this->eventDispatcher->dispatch($event);
 
-        if($throwException && !$event->isGranted()) {
-            throw new GrantException(sprintf('class-level access denied (%s %s)',$action,$entityClass), $event->getCode(),$event->getViolations());
+        if ($throwException && !$event->isGranted()) {
+            throw new GrantException(sprintf('class-level access denied (%s %s)', $action, $entityClass), $event->getCode(), $event->getViolations());
         }
 
         return $event->isGranted();
     }
 
-
-    /**
-     * @param string $action
-     *
-     * @return void
-     */
     private function validateAction(string $action): void
     {
         if (!in_array($action, self::ACTION_LIST, true)) {
@@ -213,20 +191,13 @@ class AclManager
         }
     }
 
-    /**
-     * @return bool
-     */
     public function isEnabled(): bool
     {
         return $this->enabled;
     }
 
-    /**
-     * @param bool $enabled
-     */
     public function setEnabled(bool $enabled): void
     {
         $this->enabled = $enabled;
     }
-
 }

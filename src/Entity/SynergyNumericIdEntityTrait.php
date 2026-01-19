@@ -18,7 +18,7 @@ trait SynergyNumericIdEntityTrait
 
     public function setId(string|int $id): static
     {
-        if(is_string($id)) {
+        if (is_string($id)) {
             throw new \InvalidArgumentException('Id must be an integer');
         }
         $this->id = $id;

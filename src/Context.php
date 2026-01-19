@@ -6,10 +6,8 @@ namespace Efrogg\Synergy;
 
 class Context
 {
-
     public static function createDefaultContext(): Context
     {
         return new self();
     }
-
 }

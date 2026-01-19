@@ -9,8 +9,6 @@ class EntityFullUpdateAction extends EntityAction
     protected static string $action = 'inject';
     /** @var array<string,mixed> */
     protected static array $additionalParameters = [
-        'fullUpdate' => true
+        'fullUpdate' => true,
     ];
-
-
 }

@@ -13,19 +13,18 @@ readonly class ActionNormalizer
     }
 
     /**
-     * @param EntityAction $action
-     *
      * @return array<string,mixed>
+     *
      * @throws ExceptionInterface
      */
     public function normalize(EntityAction $entityAction): array
     {
         $data = $this->entityCollectionNormalizer->normalize($entityAction->getEntities());
+
         return [
             'action' => $entityAction::getAction(),
-            'data'   => $data,
-            ...$entityAction::getAdditionalParameters()
+            'data' => $data,
+            ...$entityAction::getAdditionalParameters(),
         ];
     }
-
 }

@@ -9,7 +9,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 #[AutoconfigureTag('synergy.entity')]
 interface SynergyEntityInterface
 {
-    public function getId(): null|string|int;
+    public function getId(): string|int|null;
 
     public function setId(string|int $id): static;
 

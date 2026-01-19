@@ -11,19 +11,16 @@ use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
 
 readonly class WorkerSubscriber implements EventSubscriberInterface
 {
-
-
     public function __construct(
         private ActionCollectorInterface $actionCollector,
     ) {
     }
 
-
     public static function getSubscribedEvents(): array
     {
         return [
             WorkerStoppedEvent::class => 'flushCollector',
-            WorkerMessageHandledEvent::class => 'flushCollector'
+            WorkerMessageHandledEvent::class => 'flushCollector',
         ];
     }
 

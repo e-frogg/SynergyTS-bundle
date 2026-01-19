@@ -9,12 +9,13 @@ use Efrogg\Synergy\Entity\SynergyEntityInterface;
 readonly class SearchResult
 {
     /**
-     * @param array<SynergyEntityInterface>     $entities
+     * @param array<SynergyEntityInterface>   $entities
      * @param array<string,array<int|string>> $mainIds
      */
     public function __construct(
         private array $entities,
-        private array $mainIds = []
+        private array $mainIds = [],
+        private ?int $totalCount = null,
     ) {
     }
 
@@ -32,5 +33,10 @@ readonly class SearchResult
     public function getMainIds(): array
     {
         return $this->mainIds;
+    }
+
+    public function getTotalCount(): ?int
+    {
+        return $this->totalCount;
     }
 }

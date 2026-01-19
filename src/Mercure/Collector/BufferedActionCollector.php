@@ -14,11 +14,10 @@ class BufferedActionCollector implements ActionCollectorInterface
     ) {
     }
 
-
     public function addTopicAction(string $topicName, EntityAction $entityAction): void
     {
         $this->decorated->addTopicAction($topicName, $entityAction);
-        $this->actionCounter->increment($topicName,$entityAction);
+        $this->actionCounter->increment($topicName, $entityAction);
 
         foreach ($this->actionCounter->getTopicToFlush() as $topicToFlush) {
             $this->flush($topicToFlush);
@@ -50,5 +49,4 @@ class BufferedActionCollector implements ActionCollectorInterface
     {
         $this->flush();
     }
-
 }

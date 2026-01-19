@@ -6,5 +6,4 @@ namespace Efrogg\Synergy\Serializer;
 
 class EntitySerializer
 {
-
 }

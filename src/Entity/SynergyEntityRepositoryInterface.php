@@ -10,5 +10,4 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 interface SynergyEntityRepositoryInterface
 {
     public function getSynergyEntityName(): string;
-
 }

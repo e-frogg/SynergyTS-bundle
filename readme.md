@@ -25,19 +25,8 @@ synergy:
         client_secret: 'YOUR'
 ```
 
-### Entities
-All entities must implement be declared to the ... through a tag in the service declaration
-```yaml
-services:
-    App\:
-        resource: '../src/'
-        exclude:
-            - '../src/DependencyInjection/'
-            # - '../src/Entity/' # REMOVE THIS LINE
-            - '../src/Kernel.php'
-```
 
-a tag `synergy.entity` will automatically be added to the entity when adding an attribute to the entyty
+a tag `synergy.entity` will automatically be added to the entity when adding an attribute to the entity
 ```php
 <?php
 
@@ -51,6 +40,23 @@ class MyEntity implements SynergyEntityInterface
 {
     // [...]
 ```
+
+All entityRepositories must implement `SynergyEntityRepositoryInterface`
+The tag `synergy.entity_repository` will automatically be added to the entityRepository when adding an attribute to the repository
+```php
+namespace App\Repository;
+
+use App\Entity\MyEntity;
+use Doctrine\Persistence\ManagerRegistry;
+use Efrogg\Synergy\Entity\SynergyEntityRepository;
+
+/**
+ * @extends SynergyEntityRepository<MyEntity>
+ */
+class MyEntityRepository extends SynergyEntityRepository
+{
+```
+
 ### Grants
 By default, all entities are locked. You must add a grant to the entity to allow access to the entity.
 

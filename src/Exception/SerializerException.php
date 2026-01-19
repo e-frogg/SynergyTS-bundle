@@ -6,5 +6,4 @@ namespace Efrogg\Synergy\Exception;
 
 class SerializerException extends \Exception
 {
-
 }

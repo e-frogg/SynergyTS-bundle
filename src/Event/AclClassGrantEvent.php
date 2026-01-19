@@ -6,8 +6,6 @@ namespace Efrogg\Synergy\Event;
 
 class AclClassGrantEvent extends AclGrantEvent
 {
-
-
     /**
      * @param array<string> $violations
      */

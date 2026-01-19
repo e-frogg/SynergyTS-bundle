@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Efrogg\Synergy\Data;
 
-use App\Model\ProjectModel;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Efrogg\Synergy\Serializer\Normalizer\EntityCollectionNormalizer;
 use Efrogg\Synergy\Serializer\Normalizer\EntityNormalizer;
@@ -14,15 +13,12 @@ use Symfony\Component\Serializer\Exception\ExceptionInterface;
 
 class EntityResponseBuilder
 {
-
     private int $discoverLevel = 0;
-
 
     public function __construct(
         private readonly EntityCollectionNormalizer $entityCollectionNormalizer,
         private readonly MercureExtension $mercureExtension,
         private readonly EntityNormalizer $genericEntityNormalizer,
-
     ) {
     }
 
@@ -33,16 +29,16 @@ class EntityResponseBuilder
     }
 
     /**
-     * @param array<SynergyEntityInterface>      $entities
+     * @param array<SynergyEntityInterface>    $entities
      * @param ?array<string,array<int|string>> $mainIds
-     * @param null|string|array<string>        $mercureTopics
+     * @param string|array<string>|null        $mercureTopics
      *
      * @throws ExceptionInterface
      */
-    public function buildResponse(array $entities, ?array $mainIds = null, null|string|array $mercureTopics = null): JsonResponse
+    public function buildResponse(array $entities, ?array $mainIds = null, string|array|null $mercureTopics = null, ?int $totalCount = null): JsonResponse
     {
         $data = [
-            'data' => $this->entityCollectionNormalizer->normalize($entities, $this->discoverLevel)
+            'data' => $this->entityCollectionNormalizer->normalize($entities, $this->discoverLevel),
         ];
         if (null !== $mercureTopics) {
             $data['mercureUrl'] = $this->mercureExtension->mercure($mercureTopics, ['subscribe' => $mercureTopics]);
@@ -50,6 +46,10 @@ class EntityResponseBuilder
         if (null !== $mainIds) {
             $data['mainIds'] = $mainIds;
         }
+        if (null !== $totalCount) {
+            $data['totalCount'] = $totalCount;
+        }
+
         return new JsonResponse($data);
     }
 
@@ -57,29 +57,45 @@ class EntityResponseBuilder
      * @param array<SynergyEntityInterface> $entities
      * @param string|array<string>|null     $mercureTopics
      *
-     * @return JsonResponse
      * @throws ExceptionInterface
      */
-    public function buildResponseFromCollection(array $entities, null|string|array $mercureTopics = null): JsonResponse
+    public function buildResponseFromCollection(array $entities, string|array|null $mercureTopics = null, ?int $totalCount = null): JsonResponse
     {
         return $this->buildResponse(
             $entities,
             $this->computeMainIds($entities),
-            $mercureTopics
+            $mercureTopics,
+            $totalCount
         );
     }
 
     /**
      * @param array<SynergyEntityInterface> $entities
      *
-     * @return array
+     * @return array<string,array<int|string>>
      */
-    private function computeMainIds(array $entities)
+    private function computeMainIds(array $entities): array
     {
         $mainIds = [];
         foreach ($entities as $entity) {
-            $mainIds[$entity::getEntityName()] []= $entity->getId();
+            $mainIds[$entity::getEntityName()][] = $entity->getId();
         }
-        return $mainIds;
+
+        return array_map(array_filter(...), $mainIds);
+    }
+
+    /**
+     * @param string|array<string>|null $mercureTopics
+     *
+     * @throws ExceptionInterface
+     */
+    public function buildResponseFromSearchResult(SearchResult $result, string|array|null $mercureTopics = null): JsonResponse
+    {
+        return $this->buildResponse(
+            $result->getEntities(),
+            $result->getMainIds(),
+            $mercureTopics,
+            $result->getTotalCount()
+        );
     }
 }

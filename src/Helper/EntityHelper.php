@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Efrogg\Synergy\Helper;
 
-
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\EntityRepository;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
@@ -15,40 +14,37 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 class EntityHelper
 {
-
     /**
      * @var array<string,class-string<SynergyEntityInterface>>
      */
     private array $entityClasses = [];
 
     /**
-     * @var array<class-string<array<string,mixed>>>
+     * @var array<string,mixed>
      */
     #[Ignore]
-    #[\Symfony\Component\Serializer\Annotation\Ignore]
     private array $_entityDefinitions = [];
     /**
      * @var array<string, string>
      */
-    protected static array $entityNamesCache=[];
+    protected static array $entityNamesCache = [];
 
     /**
      * @param class-string<SynergyEntityInterface> $class
      *
-     * @return string
      * @throws \ReflectionException
      */
     public static function getEntityName(string $class): string
     {
-        static::$entityNamesCache[$class] ??= (new \ReflectionClass($class))->getShortName();
+        static::$entityNamesCache[$class] ??= new \ReflectionClass($class)->getShortName();
+
         return static::$entityNamesCache[$class];
     }
 
     /**
-     * @param array $_entityDefinitions
+     * @deprecated not used for now... maybe later
      *
-     * @return void
-     * @deprecated not uset for now... maybe later
+     * @param array<string,mixed> $_entityDefinitions
      */
     public function setEntityDefinitions(array $_entityDefinitions): void
     {
@@ -56,8 +52,9 @@ class EntityHelper
     }
 
     /**
+     * @deprecated not used for now... maybe later
      *
-     * @return array
+     * @return array<string,mixed>
      */
     public function getEntityDefinitions(): array
     {
@@ -70,32 +67,33 @@ class EntityHelper
     #[Required]
     public function setEntities(
         #[AutowireIterator('synergy.entity')]
-        iterable $entities
-    ): void
-    {
+        iterable $entities,
+    ): void {
         foreach ($entities as $entity) {
             $this->entityClasses[$entity::getEntityName()] = $entity::class;
         }
     }
+
     /**
      * @param iterable<SynergyEntityRepositoryInterface> $repositories
      */
     #[Required]
     public function setEntityRepositories(
         #[AutowireIterator('synergy.entity-repository')]
-        iterable $repositories
-    ): void
-    {
+        iterable $repositories,
+    ): void {
         foreach ($repositories as $repository) {
             if(!$repository instanceof EntityRepository) {
                 throw new \InvalidArgumentException('Entity repository must extend ServiceEntityRepository');
             }
-            $this->entityClasses[$repository->getSynergyEntityName()] = $repository->getClassName();
+            /** @var class-string<SynergyEntityInterface> $className */
+            $className = $repository->getClassName();
+            $this->entityClasses[$repository->getSynergyEntityName()] = $className;
         }
     }
 
     /**
-     * @return array<class-string<SynergyEntityInterface>>
+     * @return array<class-string<SynergyEntityInterface & object>>
      */
     public function getEntityClasses(): array
     {
@@ -103,9 +101,7 @@ class EntityHelper
     }
 
     /**
-     * @param string $entityName
-     *
-     * @return class-string<SynergyEntityInterface>|null
+     * @return class-string<SynergyEntityInterface & object>|null
      */
     public function findEntityClass(string $entityName): ?string
     {
@@ -123,10 +119,11 @@ class EntityHelper
     public function findEntityName(?string $className): ?string
     {
         foreach ($this->entityClasses as $entityName => $entityClass) {
-            if($className === $entityClass) {
+            if ($className === $entityClass) {
                 return $entityName;
             }
         }
+
         return null;
     }
 }

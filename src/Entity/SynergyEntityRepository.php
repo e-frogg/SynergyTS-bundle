@@ -8,13 +8,15 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
  * @template T of SynergyEntityInterface
+ *
  * @extends ServiceEntityRepository<T>
  */
 abstract class SynergyEntityRepository extends ServiceEntityRepository implements SynergyEntityRepositoryInterface
 {
+    private string $synergyEntityName;
+
     public function getSynergyEntityName(): string
     {
-        return $this->getEntityName();
+        return $this->synergyEntityName ??= new \ReflectionClass($this->getEntityName())->getShortName();
     }
-
 }
