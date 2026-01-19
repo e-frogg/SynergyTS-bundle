@@ -6,6 +6,7 @@ namespace Efrogg\Synergy\Helper;
 
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\EntityRepository;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Efrogg\Synergy\Entity\SynergyEntityRepositoryInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
@@ -86,7 +87,7 @@ class EntityHelper
     ): void
     {
         foreach ($repositories as $repository) {
-            if(!$repository instanceof ServiceEntityRepository) {
+            if(!$repository instanceof EntityRepository) {
                 throw new \InvalidArgumentException('Entity repository must extend ServiceEntityRepository');
             }
             $this->entityClasses[$repository->getSynergyEntityName()] = $repository->getClassName();
