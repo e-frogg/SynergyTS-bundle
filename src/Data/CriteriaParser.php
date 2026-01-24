@@ -11,6 +11,7 @@ class CriteriaParser
     public function parse(ParameterBag $body): Criteria
     {
         $criteria = new Criteria(
+            ids: $body->get('ids'),
             filters: $body->get('filters', []),
             orderBy: $body->get('orderBy'),
             limit: $body->get('limit'),

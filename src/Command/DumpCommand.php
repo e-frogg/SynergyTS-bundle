@@ -31,7 +31,7 @@ class DumpCommand extends Command
             $io->writeln(sprintf('Entity: <fg=yellow>%s</> (%s)', EntityHelper::getEntityName($entityClass), $entityClass));
         }
 
-        $criteria = new Criteria(['id' => [2, 3]]);
+        $criteria = new Criteria([2, 3]);
         //        $workAssociation = $criteria->getAssociation("releases")
         //                                    ->setOrderBy(['id' => 'DESC'])
         //                                    ->setLimit(2);                 // problème, ça ne fetch qu'un seul work en tout, et pas un par user

@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping\ManyToMany;
 use Doctrine\ORM\Mapping\ManyToOne;
 use Doctrine\ORM\Mapping\OneToMany;
 use Doctrine\ORM\Mapping\OneToOne;
-use Doctrine\ORM\Query\Expr\OrderBy;
+use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\QueryBuilder;
 use Efrogg\Synergy\Acl\AclManager;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
@@ -41,7 +41,7 @@ class EntityRepositoryHelper
         $this->aclManager->checkClassIsGranted($entityClass, AclManager::READ);
         $lastMainIds = [];
 
-        /** @phpstan-ignore-next-line  */
+        /* @phpstan-ignore-next-line */
         if (!is_a($entityClass, SynergyEntityInterface::class, true)) {
             throw new \LogicException(__CLASS__.' : only SynergyEntityInterface can be searched');
         }
@@ -160,7 +160,7 @@ class EntityRepositoryHelper
                 throw new \RuntimeException("No relationship found for $associationPropertyName");
             }
 
-            $targetEntityClass = $attributeInstance->targetEntity ?? $propertyInfo->class ?? throw new \RuntimeException('no targetEntity found for association '.$associationPropertyName.'. please precise it in the attribute definition');
+            $targetEntityClass = $attributeInstance->targetEntity ?? throw new \RuntimeException('no targetEntity found for association '.$entityClass.'::'.$associationPropertyName.'. please precise it in the attribute definition');
             if (!is_a($targetEntityClass, SynergyEntityInterface::class, true)) {
                 throw new \RuntimeException(sprintf('association %s is not a Synergy entity', $targetEntityClass));
             }
@@ -184,11 +184,16 @@ class EntityRepositoryHelper
     /**
      * @param class-string<SynergyEntityInterface> $entityClass
      */
-    protected function createQueryBuilder(string $entityClass, Criteria $criteria): ?QueryBuilder
+    protected function createQueryBuilder(string $entityClass, Criteria $criteria): QueryBuilder
     {
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('c')
             ->from($entityClass, 'c');
+
+        if (!empty($criteria->getIds())) {
+            $qb->andWhere($qb->expr()->in('c.id', ':ids'))
+                ->setParameter('ids', $criteria->getIds());
+        }
 
         $this->enrichQueryBuilderFilters($qb, $criteria->getFilters(), 'c');
 
@@ -210,11 +215,31 @@ class EntityRepositoryHelper
         array $filters,
         string $rootAlias = 'c',
     ): void {
-        $joins = [];
+        foreach ($this->buildFilters($qb, $filters, $rootAlias) as $expr) {
+            $qb->andWhere($expr);
+        }
+    }
 
+    /**
+     * @param mixed[] $filters
+     *
+     * @return iterable<Expr\Base|string>
+     */
+    private function buildFilters(QueryBuilder $qb, array $filters, string $rootAlias = 'c', string $param_prefix = ''): iterable
+    {
+        $joins = [];
         foreach ($filters as $key => $value) {
-            // nested : relation.field
-            if (str_contains($key, '.')) {
+            if ('or' === $key || 'and' === $key) {
+                // groupement de filtres
+                $expr = 'or' === $key ? $qb->expr()->orX() : $qb->expr()->andX();
+                foreach ($value as $k => $oneFilter) {
+                    foreach ($this->buildFilters($qb, $oneFilter, $rootAlias, $param_prefix.'_'.$key.$k.'_') as $subExpr) {
+                        $expr->add($subExpr);
+                    }
+                }
+                yield $expr;
+            } elseif (str_contains($key, '.')) {
+                // nested : relation.field
                 [$relation, $field] = explode('.', $key, 2);
 
                 // alias unique par relation
@@ -227,28 +252,12 @@ class EntityRepositoryHelper
                     $alias = $joins[$relation];
                 }
 
-                $param = str_replace('.', '_', $key);
+                $param = $param_prefix.str_replace('.', '_', $key);
 
-                if (is_array($value)) {
-                    $qb->andWhere(sprintf('%s.%s IN (:%s)', $alias, $field, $param));
-                } else {
-                    $qb->andWhere(sprintf('%s.%s = :%s', $alias, $field, $param));
-                }
-
-                $qb->setParameter($param, $value);
-            }
-
-            // champ simple
-            else {
-                $param = $key;
-
-                if (is_array($value)) {
-                    $qb->andWhere(sprintf('%s.%s IN (:%s)', $rootAlias, $key, $param));
-                } else {
-                    $qb->andWhere(sprintf('%s.%s = :%s', $rootAlias, $key, $param));
-                }
-
-                $qb->setParameter($param, $value);
+                yield $this->applyFilter($value, $qb, $alias, $field, $param);
+            } else {
+                // champ simple
+                yield $this->applyFilter($value, $qb, $rootAlias, $key, $param_prefix.$key);
             }
         }
     }
@@ -264,5 +273,149 @@ class EntityRepositoryHelper
             }
             $qb->orderBy($rootAlias.'.'.$sortKey, $sortDirection);
         }
+    }
+
+    protected function applyFilter(mixed $value, QueryBuilder $qb, string $alias, string $field, string $param): Expr\Base|string
+    {
+        // json field support
+        if (str_contains($field, ':')) {
+            [$field, $jsonKey] = explode(':', $field, 2);
+            $field = sprintf("JSON_VALUE(%s.%s, '$.%s')", $alias, $field, $jsonKey);
+            // remove : for param name
+            $param = str_replace(':', '_', $param);
+        } else {
+            $field = sprintf('%s.%s', $alias, $field);
+        }
+
+        if (is_array($value)) {
+            if (isset($value['type'])) {
+                // complex filter
+                return $this->buildSingleFilterExpr($value, $field, $param, $qb, $alias);
+            }
+
+            // multiple value for simple IN
+            $qb->setParameter($param, $value);
+
+            return sprintf('%s IN (:%s)', $field, $param);
+        }
+
+        // single value equals
+        $qb->setParameter($param, $value);
+
+        return sprintf('%s = :%s', $field, $param);
+    }
+
+    /**
+     * @param array<string,mixed> $filterData
+     * @param string              $expectedType pipe separated expected types
+     */
+    private function extractValue(string $field, array $filterData, string $expectedType = '', string $valueField = 'value'): mixed
+    {
+        if (!isset($filterData[$valueField])) {
+            throw new \LogicException(sprintf('%s : "%s" key is missing', $field, $valueField));
+        }
+        $filterData = $filterData[$valueField];
+        $type = get_debug_type($filterData);
+        if ('' !== $expectedType && !str_contains($expectedType, $type)) {
+            throw new \LogicException(sprintf('%s : "%s" is not of type %s (got %s)', $field, $valueField, $expectedType, $type));
+        }
+
+        return $filterData;
+    }
+
+    /**
+     * @param array<string,mixed> $filterData
+     */
+    private function buildSingleFilterExpr(array $filterData, string $field, ?string &$param, QueryBuilder $qb, string $alias): Expr\Base|string
+    {
+        $filterType = $filterData['type'] ?? throw new \LogicException($field.' : "type" key is missing');
+        switch ($filterType) {
+            case 'null':
+                // direct return, no param needed
+                return $qb->expr()->isNull($field);
+            case 'not_null':
+                // direct return, no param needed
+                return $qb->expr()->isNotNull($field);
+            case 'in':
+            case 'equals_any':
+                $expr = $qb->expr()->in($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData, 'array');
+                break;
+            case 'not_equals_any':
+            case 'not_in':
+                $expr = $qb->expr()->notIn($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData, 'array');
+                break;
+            case 'contains':
+                $expr = $qb->expr()->like($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData, 'string');
+                $paramValue = '%'.$paramValue.'%';
+                break;
+            case 'starts_with':
+                $expr = $qb->expr()->like($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData, 'string').'%';
+                break;
+            case 'ends_with':
+                $expr = $qb->expr()->like($field, ':'.$param);
+                $paramValue = '%'.$this->extractValue($field, $filterData, 'string');
+                break;
+            case 'greater_than':
+                $expr = $qb->expr()->gt($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData, 'int|float');
+                break;
+            case 'less_than':
+                $expr = $qb->expr()->lt($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData, 'int|float');
+                break;
+            case 'between':
+                $expr = $qb->expr()->between($field, ':'.$param.'_from', ':'.$param.'_to');
+                $qb->setParameter($param.'_from', $this->extractValue($field, $filterData, 'int|float', 'from'));
+                $qb->setParameter($param.'_to', $this->extractValue($field, $filterData, 'int|float', 'to'));
+
+                return $expr;
+            case 'equals':
+                $expr = $qb->expr()->eq($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData);
+                break;
+            case 'not_equals':
+                $expr = $qb->expr()->neq($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData);
+                break;
+            case 'less_than_or_equal':
+                $expr = $qb->expr()->lte($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData, 'int|float');
+                break;
+            case 'greater_than_or_equal':
+                $expr = $qb->expr()->gte($field, ':'.$param);
+                $paramValue = $this->extractValue($field, $filterData, 'int|float');
+                break;
+            case 'and':
+                $expr = $qb->expr()->andX();
+                $subFilters = $this->extractValue($field, $filterData, 'array', 'filters');
+                foreach ($subFilters as $k => $subFilter) {
+                    $subParam = $param.'_and'.$k;
+                    $expr->add($this->buildSingleFilterExpr($subFilter, $field, $subParam, $qb, $alias));
+                }
+
+                return $expr;
+            case 'or':
+                $expr = $qb->expr()->orX();
+                $subFilters = $this->extractValue($field, $filterData, 'array', 'filters');
+                foreach ($subFilters as $k => $subFilter) {
+                    $subParam = $param.'_or'.$k;
+                    $expr->add($this->buildSingleFilterExpr($subFilter, $field, $subParam, $qb, $alias));
+                }
+
+                return $expr;
+
+            default:
+                throw new \LogicException('unknown filter type '.$filterType);
+        }
+
+        if (null !== $param) {
+            $qb->setParameter($param, $paramValue);
+        }
+
+        return $expr;
     }
 }

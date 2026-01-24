@@ -11,11 +11,13 @@ class Criteria
     /**
      * Finds entities by a set of criteria.
      *
+     * @param array<int|string>|null    $ids
      * @param array<string,mixed>       $filters
      * @param array<string,string>|null $orderBy
      * @param array<string,Criteria>    $associations
      */
     public function __construct(
+        private ?array $ids = null,
         private array $filters = [],
         private ?array $orderBy = null,
         private ?int $limit = null,
@@ -149,6 +151,24 @@ class Criteria
     public function setTotalCountNeeded(bool $totalCountNeeded): static
     {
         $this->totalCountNeeded = $totalCountNeeded;
+
+        return $this;
+    }
+
+    /**
+     * @return array<int|string>|null
+     */
+    public function getIds(): ?array
+    {
+        return $this->ids;
+    }
+
+    /**
+     * @param array<int|string>|null $ids
+     */
+    public function setIds(?array $ids): static
+    {
+        $this->ids = $ids;
 
         return $this;
     }
