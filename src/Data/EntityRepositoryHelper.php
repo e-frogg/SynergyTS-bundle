@@ -11,8 +11,10 @@ use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\QueryBuilder;
 use Efrogg\Synergy\Acl\AclManager;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
+use Efrogg\Synergy\Event\CustomFilterEvent;
 use Efrogg\Synergy\Exception\GrantException;
 use Efrogg\Synergy\Helper\EntityHelper;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 
@@ -24,6 +26,7 @@ class EntityRepositoryHelper
         private readonly ClassMetadataFactoryInterface $classMetadataFactory,
         private readonly PropertyAccessorInterface $propertyAccessor,
         private readonly AclManager $aclManager,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -52,27 +55,24 @@ class EntityRepositoryHelper
         $totalCount = null;
         //        if ($criteria->isTotalCountMode()) {
 
-        if ($queryBuilder instanceof QueryBuilder) {
-            $mainResult = $queryBuilder->getQuery()->getResult();
+        $mainResult = $queryBuilder->getQuery()->getResult();
 
-            if ($criteria->isTotalCountNeeded()) {
-                $countQb = clone $queryBuilder;
-                $countQb
-                    ->setMaxResults(null)
-                    ->setFirstResult(null)
-                    ->select('COUNT(1)');
+        if ($criteria->isTotalCountNeeded()) {
+            $countQb = clone $queryBuilder;
+            $countQb
+                ->setMaxResults(null)
+                ->setFirstResult(null)
+                ->select('COUNT(1)');
 
-                $totalCount = (int) $countQb->getQuery()->getSingleScalarResult();
-            }
-        } else {
-            $filters = $criteria->getFilters();
-            $mainResult = $this->entityManager->getRepository($entityClass)->findBy(
-                $filters,
-                $criteria->getOrderBy(),
-                $criteria->getLimit(),
-                $criteria->getOffset()
-            );
+            $totalCount = (int) $countQb->getQuery()->getSingleScalarResult();
         }
+        //            $filters = $criteria->getFilters();
+        //            $mainResult = $this->entityManager->getRepository($entityClass)->findBy(
+        //                $filters,
+        //                $criteria->getOrderBy(),
+        //                $criteria->getLimit(),
+        //                $criteria->getOffset()
+        //            );
 
         // un essai, à approfondir
         //        $query = $this->createQueryBuilder($entityClass,$criteria);
@@ -326,7 +326,7 @@ class EntityRepositoryHelper
     /**
      * @param array<string,mixed> $filterData
      */
-    private function buildSingleFilterExpr(array $filterData, string $field, ?string &$param, QueryBuilder $qb, string $alias): Expr\Base|string
+    private function buildSingleFilterExpr(array $filterData, string $field, string $parameterName, QueryBuilder $qb, string $alias): Expr\Base|string
     {
         $filterType = $filterData['type'] ?? throw new \LogicException($field.' : "type" key is missing');
         switch ($filterType) {
@@ -338,62 +338,62 @@ class EntityRepositoryHelper
                 return $qb->expr()->isNotNull($field);
             case 'in':
             case 'equals_any':
-                $expr = $qb->expr()->in($field, ':'.$param);
+                $expr = $qb->expr()->in($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData, 'array');
                 break;
             case 'not_equals_any':
             case 'not_in':
-                $expr = $qb->expr()->notIn($field, ':'.$param);
+                $expr = $qb->expr()->notIn($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData, 'array');
                 break;
             case 'contains':
-                $expr = $qb->expr()->like($field, ':'.$param);
+                $expr = $qb->expr()->like($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData, 'string');
                 $paramValue = '%'.$paramValue.'%';
                 break;
             case 'starts_with':
-                $expr = $qb->expr()->like($field, ':'.$param);
+                $expr = $qb->expr()->like($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData, 'string').'%';
                 break;
             case 'ends_with':
-                $expr = $qb->expr()->like($field, ':'.$param);
+                $expr = $qb->expr()->like($field, ':'.$parameterName);
                 $paramValue = '%'.$this->extractValue($field, $filterData, 'string');
                 break;
             case 'greater_than':
-                $expr = $qb->expr()->gt($field, ':'.$param);
+                $expr = $qb->expr()->gt($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData, 'int|float');
                 break;
             case 'less_than':
-                $expr = $qb->expr()->lt($field, ':'.$param);
+                $expr = $qb->expr()->lt($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData, 'int|float');
                 break;
             case 'between':
-                $expr = $qb->expr()->between($field, ':'.$param.'_from', ':'.$param.'_to');
-                $qb->setParameter($param.'_from', $this->extractValue($field, $filterData, 'int|float', 'from'));
-                $qb->setParameter($param.'_to', $this->extractValue($field, $filterData, 'int|float', 'to'));
+                $expr = $qb->expr()->between($field, ':'.$parameterName.'_from', ':'.$parameterName.'_to');
+                $qb->setParameter($parameterName.'_from', $this->extractValue($field, $filterData, 'int|float', 'from'));
+                $qb->setParameter($parameterName.'_to', $this->extractValue($field, $filterData, 'int|float', 'to'));
 
                 return $expr;
             case 'equals':
-                $expr = $qb->expr()->eq($field, ':'.$param);
+                $expr = $qb->expr()->eq($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData);
                 break;
             case 'not_equals':
-                $expr = $qb->expr()->neq($field, ':'.$param);
+                $expr = $qb->expr()->neq($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData);
                 break;
             case 'less_than_or_equal':
-                $expr = $qb->expr()->lte($field, ':'.$param);
+                $expr = $qb->expr()->lte($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData, 'int|float');
                 break;
             case 'greater_than_or_equal':
-                $expr = $qb->expr()->gte($field, ':'.$param);
+                $expr = $qb->expr()->gte($field, ':'.$parameterName);
                 $paramValue = $this->extractValue($field, $filterData, 'int|float');
                 break;
             case 'and':
                 $expr = $qb->expr()->andX();
                 $subFilters = $this->extractValue($field, $filterData, 'array', 'filters');
                 foreach ($subFilters as $k => $subFilter) {
-                    $subParam = $param.'_and'.$k;
+                    $subParam = $parameterName.'_and'.$k;
                     $expr->add($this->buildSingleFilterExpr($subFilter, $field, $subParam, $qb, $alias));
                 }
 
@@ -402,19 +402,22 @@ class EntityRepositoryHelper
                 $expr = $qb->expr()->orX();
                 $subFilters = $this->extractValue($field, $filterData, 'array', 'filters');
                 foreach ($subFilters as $k => $subFilter) {
-                    $subParam = $param.'_or'.$k;
+                    $subParam = $parameterName.'_or'.$k;
                     $expr->add($this->buildSingleFilterExpr($subFilter, $field, $subParam, $qb, $alias));
                 }
 
                 return $expr;
 
             default:
-                throw new \LogicException('unknown filter type '.$filterType);
+                // trigger event to allow custom filter types
+                $event = new CustomFilterEvent($filterType, $field, $filterData, $qb, $alias, $parameterName);
+                $this->eventDispatcher->dispatch($event);
+
+                return $event->getExpr()
+                 ?? throw new \LogicException('unknown filter type '.$filterType);
         }
 
-        if (null !== $param) {
-            $qb->setParameter($param, $paramValue);
-        }
+        $qb->setParameter($parameterName, $paramValue);
 
         return $expr;
     }
