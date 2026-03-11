@@ -18,6 +18,9 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
     ) {
     }
 
+    /**
+     * Example: `App\Entity\Content#42`.
+     */
     public static function buildEntityKey(string $entityClass, string|int $entityId): string
     {
         return $entityClass.'#'.$entityId;
@@ -25,8 +28,19 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @param array<string> $entityKeys
+     *                                  Example input: `['App\Entity\Content#42', 'App\Entity\Content#84']`
      *
      * @return array{id:string,ownerId:string,topic:string,entityKeys:array<string>,ttlSeconds:int,expiresAt:int}
+     *
+     * Example return shape:
+     * `[
+     *   'id' => 'ab12...',
+     *   'ownerId' => 'user-7',
+     *   'topic' => 'session_ab12...',
+     *   'entityKeys' => ['App\Entity\Content#42'],
+     *   'ttlSeconds' => 3600,
+     *   'expiresAt' => 1710003600,
+     * ]`
      */
     public function createSession(string $ownerId, array $entityKeys, ?int $ttlSeconds = null): array
     {
@@ -49,8 +63,10 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @param array<string> $entityKeys
+     *                                  Example input: `['App\Entity\Content#84']`
      *
      * @return array{id:string,ownerId:string,topic:string,entityKeys:array<string>,ttlSeconds:int,expiresAt:int}
+     *                                                                                                            Example return shape: `['id' => 'ab12...', 'topic' => 'session_ab12...', 'entityKeys' => ['App\Entity\Content#84'], ...]`.
      */
     public function replaceSession(string $sessionId, string $ownerId, array $entityKeys, ?int $ttlSeconds = null): array
     {
@@ -78,6 +94,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @return array{id:string,ownerId:string,topic:string,entityKeys:array<string>,ttlSeconds:int,expiresAt:int}|null
+     *                                                                                                                 Example return shape: `['id' => 'ab12...', 'ownerId' => 'user-7', 'entityKeys' => ['App\Entity\Content#42'], ...]` or `null`.
      */
     public function getSession(string $sessionId): ?array
     {
@@ -116,6 +133,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @return array<string>
+     *                       Example return: `['session_ab12...']`.
      */
     public function findTopicsForEntity(SynergyEntityInterface $entity): array
     {
@@ -131,6 +149,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @return array<string>
+     *                       Example return: `['session_ab12...', 'session_cd34...']`.
      */
     public function findTopicsForEntityKey(string $entityKey): array
     {
@@ -149,6 +168,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
         $topics = [];
 
         foreach ($sessionIds as $sessionId) {
+            // The reverse index is intentionally best-effort: stale entries are repaired lazily here instead of scanning all sessions on each entity update.
             $session = $this->getSession($sessionId);
             if (null === $session) {
                 continue;
@@ -177,6 +197,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @return array{id:string,ownerId:string,topic:string,entityKeys:array<string>,ttlSeconds:int,expiresAt:int}
+     *                                                                                                            Example return shape: `['id' => 'ab12...', 'ownerId' => 'user-7', 'entityKeys' => ['App\Entity\Content#42'], ...]`.
      */
     private function getOwnedSession(string $sessionId, string $ownerId): array
     {
@@ -193,6 +214,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @param array{id:string,ownerId:string,topic:string,entityKeys:array<string>,ttlSeconds:int,expiresAt:int} $session
+     *                                                                                                                    Example input: `['id' => 'ab12...', 'topic' => 'session_ab12...', 'entityKeys' => ['App\Entity\Content#42'], ...]`.
      */
     private function persistSession(array $session): void
     {
@@ -204,6 +226,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @param array<string> $entityKeys
+     *                                  Example input: `['App\Entity\Content#42', 'App\Entity\Content#84']`
      */
     private function addSessionToIndexes(string $sessionId, array $entityKeys): void
     {
@@ -220,6 +243,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @param array<string> $entityKeys
+     *                                  Example input: `['App\Entity\Content#42', 'App\Entity\Content#84']`
      */
     private function removeSessionFromIndexes(string $sessionId, array $entityKeys): void
     {
@@ -255,6 +279,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     private function getEntityIndexCacheKey(string $entityKey): string
     {
+        // Example: `App\Entity\Content#42` becomes `synergy_mercure_session_idx_<sha1>` to keep backend cache keys safe.
         return self::ENTITY_INDEX_CACHE_PREFIX.sha1($entityKey);
     }
 
@@ -267,6 +292,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @return array<string>
+     *                       Example input/output: `['session_ab12...', '', 12]` becomes `['session_ab12...']`.
      */
     private function normalizeSessionIdList(mixed $value): array
     {
@@ -286,6 +312,7 @@ class MercureSessionManager implements MercureSessionTopicResolverInterface
 
     /**
      * @return array<string>
+     *                       Example input/output: `['App\Entity\Content#42', '', null]` becomes `['App\Entity\Content#42']`
      */
     private function normalizeEntityKeys(mixed $value): array
     {
