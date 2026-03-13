@@ -12,9 +12,11 @@ use Doctrine\ORM\QueryBuilder;
 use Efrogg\Synergy\Acl\AclManager;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Efrogg\Synergy\Event\CustomFilterEvent;
+use Efrogg\Synergy\Event\SearchCriteriaEvent;
 use Efrogg\Synergy\Exception\GrantException;
 use Efrogg\Synergy\Helper\EntityHelper;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 
@@ -27,6 +29,7 @@ class EntityRepositoryHelper
         private readonly PropertyAccessorInterface $propertyAccessor,
         private readonly AclManager $aclManager,
         private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly RequestStack $requestStack,
     ) {
     }
 
@@ -43,6 +46,15 @@ class EntityRepositoryHelper
         $criteria ??= new Criteria();
         $this->aclManager->checkClassIsGranted($entityClass, AclManager::READ);
         $lastMainIds = [];
+
+        $this->eventDispatcher->dispatch(
+            new SearchCriteriaEvent(
+                $entityClass,
+                $criteria,
+                $isMain,
+                $this->requestStack->getCurrentRequest()
+            )
+        );
 
         /* @phpstan-ignore-next-line */
         if (!is_a($entityClass, SynergyEntityInterface::class, true)) {
