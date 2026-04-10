@@ -44,8 +44,6 @@ class EntityNormalizer implements NormalizerInterface, NormalizerAwareInterface
 
     /** @var array<string> */
     protected const array SKIPPED_ATTRIBUTE = [
-        'createdAt',
-        'updatedAt',
         '_properties',
         '_entityName',
     ];
