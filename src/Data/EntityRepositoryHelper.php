@@ -74,7 +74,7 @@ class EntityRepositoryHelper
             $countQb
                 ->setMaxResults(null)
                 ->setFirstResult(null)
-                ->select('COUNT(1)');
+                ->select('COUNT(DISTINCT c.id)');
 
             $totalCount = (int) $countQb->getQuery()->getSingleScalarResult();
         }
