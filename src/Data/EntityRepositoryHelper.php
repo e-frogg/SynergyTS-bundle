@@ -13,6 +13,7 @@ use Efrogg\Synergy\Acl\AclManager;
 use Efrogg\Synergy\Entity\SynergyEntityInterface;
 use Efrogg\Synergy\Event\CustomFilterEvent;
 use Efrogg\Synergy\Event\SearchCriteriaEvent;
+use Efrogg\Synergy\Event\SearchSelectionEvent;
 use Efrogg\Synergy\Exception\GrantException;
 use Efrogg\Synergy\Helper\EntityHelper;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -61,22 +62,32 @@ class EntityRepositoryHelper
             throw new \LogicException(__CLASS__.' : only SynergyEntityInterface can be searched');
         }
 
-        $queryBuilder = $this->createQueryBuilder($entityClass, $criteria);
+        $selectionEvent = new SearchSelectionEvent(
+            $entityClass,
+            $criteria,
+            $isMain,
+            $this->requestStack->getCurrentRequest(),
+        );
+        $this->eventDispatcher->dispatch($selectionEvent);
+        $selection = $selectionEvent->getSelection();
 
-        // if totalCountMode => return count
-        $totalCount = null;
-        //        if ($criteria->isTotalCountMode()) {
+        if ($selection instanceof SearchSelection) {
+            $mainResult = $this->hydrateSelection($entityClass, $selection);
+            $totalCount = $selection->getTotalCount();
+        } else {
+            $queryBuilder = $this->createQueryBuilder($entityClass, $criteria);
+            $mainResult = $queryBuilder->getQuery()->getResult();
+            $totalCount = null;
 
-        $mainResult = $queryBuilder->getQuery()->getResult();
+            if ($criteria->isTotalCountNeeded()) {
+                $countQb = clone $queryBuilder;
+                $countQb
+                    ->setMaxResults(null)
+                    ->setFirstResult(null)
+                    ->select('COUNT(DISTINCT c.id)');
 
-        if ($criteria->isTotalCountNeeded()) {
-            $countQb = clone $queryBuilder;
-            $countQb
-                ->setMaxResults(null)
-                ->setFirstResult(null)
-                ->select('COUNT(DISTINCT c.id)');
-
-            $totalCount = (int) $countQb->getQuery()->getSingleScalarResult();
+                $totalCount = (int) $countQb->getQuery()->getSingleScalarResult();
+            }
         }
         //            $filters = $criteria->getFilters();
         //            $mainResult = $this->entityManager->getRepository($entityClass)->findBy(
@@ -191,6 +202,41 @@ class EntityRepositoryHelper
         }
 
         return new SearchResult(array_merge(...$results), $lastMainIds, $totalCount);
+    }
+
+    /**
+     * @param class-string<SynergyEntityInterface> $entityClass
+     *
+     * @return list<SynergyEntityInterface>
+     */
+    private function hydrateSelection(string $entityClass, SearchSelection $selection): array
+    {
+        $orderedIds = $selection->getOrderedIds();
+        if ([] === $orderedIds) {
+            return [];
+        }
+
+        $hydrationCriteria = clone $selection->getHydrationCriteria();
+        $hydrationCriteria->setIds($orderedIds);
+        $entities = $this->createQueryBuilder($entityClass, $hydrationCriteria)
+            ->getQuery()
+            ->getResult();
+        $entitiesById = [];
+        foreach ($entities as $entity) {
+            if ($entity instanceof SynergyEntityInterface && null !== $entity->getId()) {
+                $entitiesById[(string) $entity->getId()] = $entity;
+            }
+        }
+
+        $orderedEntities = [];
+        foreach ($orderedIds as $id) {
+            $entity = $entitiesById[(string) $id] ?? null;
+            if ($entity instanceof SynergyEntityInterface) {
+                $orderedEntities[] = $entity;
+            }
+        }
+
+        return $orderedEntities;
     }
 
     /**
